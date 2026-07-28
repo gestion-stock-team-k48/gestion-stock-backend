@@ -32,6 +32,10 @@ public record ArticleRequest(
 
         String photo,
 
+        @NotNull(message = "Le seuil minimal est obligatoire")
+        @PositiveOrZero(message = "Le seuil minimal doit être positif ou nul")
+        BigDecimal seuilMinimum,
+
         @NotNull(message = "La catégorie est obligatoire")
         Long categoryId
 ) {

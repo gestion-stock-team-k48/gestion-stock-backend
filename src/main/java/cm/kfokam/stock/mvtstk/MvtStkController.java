@@ -1,5 +1,6 @@
 package cm.kfokam.stock.mvtstk;
 
+import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 import jakarta.validation.Valid;
@@ -51,5 +52,10 @@ public class MvtStkController {
     @GetMapping("/article/{idArticle}/stock-reel")
     public ResponseEntity<BigDecimal> stockReelArticle(@PathVariable Long idArticle) {
         return ResponseEntity.ok(mvtStkService.stockReelArticle(idArticle));
+    }
+
+    @GetMapping("/alertes-stock")
+    public ResponseEntity<List<AlerteStockResponse>> alertesStock() {
+        return ResponseEntity.ok(mvtStkService.articlesEnAlerte());
     }
 }

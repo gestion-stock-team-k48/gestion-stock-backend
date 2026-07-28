@@ -3,6 +3,7 @@ package cm.kfokam.stock.vente;
 import cm.kfokam.stock.article.ArticleService;
 import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.mvtstk.MvtStkService;
@@ -34,15 +35,18 @@ class VenteServiceImpl implements VenteService {
     private final VenteMapper venteMapper;
     private final ArticleService articleService;
     private final MvtStkService mvtStkService;
+    private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
 
     @Override
     public VenteResponse create(VenteRequest request) {
-        String code = resolveCode(request.code());
+        Long idEntreprise = currentUserService.getCurrentEntrepriseId();
+        String code = resolveCode(request.code(), idEntreprise);
 
         Vente vente = venteMapper.toEntity(request);
         vente.setCode(code);
         vente.setDateVente(Instant.now());
+        vente.setIdEntreprise(idEntreprise);
 
         List<LigneVente> lignes = buildLignes(request.lignes(), vente);
         vente.setLignes(lignes);
@@ -53,8 +57,7 @@ class VenteServiceImpl implements VenteService {
             mvtStkService.sortieStock(new MvtStkRequest(
                     ligne.getArticle().getId(),
                     ligne.getQuantite(),
-                    SourceMvtStk.VENTE,
-                    saved.getIdEntreprise()
+                    SourceMvtStk.VENTE
             ));
         }
 
@@ -70,7 +73,7 @@ class VenteServiceImpl implements VenteService {
     @Override
     @Transactional(readOnly = true)
     public VenteResponse getByCode(String code) {
-        Vente vente = venteRepository.findByCode(code)
+        Vente vente = venteRepository.findByCodeAndIdEntreprise(code, currentUserService.getCurrentEntrepriseId())
                 .orElseThrow(() -> new EntityNotFoundException("Vente introuvable avec le code : " + code));
         return venteMapper.toResponse(vente);
     }
@@ -78,7 +81,7 @@ class VenteServiceImpl implements VenteService {
     @Override
     @Transactional(readOnly = true)
     public List<VenteResponse> getAll() {
-        return venteMapper.toResponseList(venteRepository.findAll());
+        return venteMapper.toResponseList(venteRepository.findAllByIdEntreprise(currentUserService.getCurrentEntrepriseId()));
     }
 
     @Override
@@ -102,24 +105,24 @@ class VenteServiceImpl implements VenteService {
         return lignes;
     }
 
-    private String resolveCode(String code) {
+    private String resolveCode(String code, Long idEntreprise) {
         if (code != null && !code.isBlank()) {
-            if (venteRepository.existsByCode(code)) {
+            if (venteRepository.existsByCodeAndIdEntreprise(code, idEntreprise)) {
                 throw new DuplicateCodeException("Le code '%s' est déjà utilisé".formatted(code));
             }
             return code;
         }
-        return generateCode();
+        return generateCode(idEntreprise);
     }
 
-    private String generateCode() {
+    private String generateCode(Long idEntreprise) {
         String prefix = "%s-%d-".formatted(CODE_PREFIX, Year.now().getValue());
-        long sequence = venteRepository.countByCodeStartingWith(prefix) + 1;
+        long sequence = venteRepository.countByCodeStartingWithAndIdEntreprise(prefix, idEntreprise) + 1;
         return "%s%04d".formatted(prefix, sequence);
     }
 
     private Vente findVenteOrThrow(Long id) {
-        return venteRepository.findById(id)
+        return venteRepository.findByIdAndIdEntreprise(id, currentUserService.getCurrentEntrepriseId())
                 .orElseThrow(() -> new EntityNotFoundException("Vente introuvable avec l'id : " + id));
     }
 }

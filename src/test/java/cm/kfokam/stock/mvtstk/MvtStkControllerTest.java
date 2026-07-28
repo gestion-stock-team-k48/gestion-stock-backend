@@ -1,6 +1,7 @@
 package cm.kfokam.stock.mvtstk;
 
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
@@ -41,7 +42,7 @@ class MvtStkControllerTest {
     private MvtStkService mvtStkService;
 
     private MvtStkRequest validRequest() {
-        return new MvtStkRequest(1L, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR, 1L);
+        return new MvtStkRequest(1L, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR);
     }
 
     private MvtStkResponse sampleResponse(TypeMvtStk type) {
@@ -67,7 +68,7 @@ class MvtStkControllerTest {
 
     @Test
     void entreeStock_shouldReturn400_whenQuantiteIsNotPositive() throws Exception {
-        MvtStkRequest invalidRequest = new MvtStkRequest(1L, new BigDecimal("-1"), SourceMvtStk.COMMANDE_FOURNISSEUR, 1L);
+        MvtStkRequest invalidRequest = new MvtStkRequest(1L, new BigDecimal("-1"), SourceMvtStk.COMMANDE_FOURNISSEUR);
 
         mockMvc.perform(post("/api/mouvements-stock/entree")
                         .contentType("application/json")
@@ -79,7 +80,7 @@ class MvtStkControllerTest {
 
     @Test
     void entreeStock_shouldReturn400_whenArticleIdIsMissing() throws Exception {
-        MvtStkRequest invalidRequest = new MvtStkRequest(null, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR, 1L);
+        MvtStkRequest invalidRequest = new MvtStkRequest(null, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR);
 
         mockMvc.perform(post("/api/mouvements-stock/entree")
                         .contentType("application/json")
@@ -181,5 +182,20 @@ class MvtStkControllerTest {
 
         mockMvc.perform(get("/api/mouvements-stock/article/{idArticle}/stock-reel", 99L))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void alertesStock_shouldReturn200WithList() throws Exception {
+        List<AlerteStockResponse> alertes = List.of(
+                new AlerteStockResponse(1L, "ART-01", "Ordinateur portable", new BigDecimal("2"), new BigDecimal("5"))
+        );
+        when(mvtStkService.articlesEnAlerte()).thenReturn(alertes);
+
+        mockMvc.perform(get("/api/mouvements-stock/alertes-stock"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].articleId").value(1L))
+                .andExpect(jsonPath("$[0].quantiteStock").value(2))
+                .andExpect(jsonPath("$[0].seuilMinimum").value(5));
     }
 }

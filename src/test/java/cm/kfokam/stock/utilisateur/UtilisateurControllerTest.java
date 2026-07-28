@@ -53,7 +53,7 @@ class UtilisateurControllerTest {
         return new UtilisateurRequest(
                 "Tchana", "Francky", "francky@kfokam.cm",
                 LocalDate.of(1995, 3, 10), null, null, "Douala", null, "Cameroun",
-                1L, Set.of(Role.ROLE_ADMIN)
+                Set.of(Role.ROLE_ADMIN)
         );
     }
 
@@ -103,7 +103,7 @@ class UtilisateurControllerTest {
         UtilisateurRequest invalidRequest = new UtilisateurRequest(
                 "Tchana", "Francky", "not-an-email",
                 LocalDate.of(1995, 3, 10), null, null, "Douala", null, "Cameroun",
-                1L, Set.of(Role.ROLE_ADMIN)
+                Set.of(Role.ROLE_ADMIN)
         );
 
         mockMvc.perform(post("/api/utilisateurs")
@@ -119,7 +119,7 @@ class UtilisateurControllerTest {
         UtilisateurRequest invalidRequest = new UtilisateurRequest(
                 "Tchana", "Francky", "francky@kfokam.cm",
                 LocalDate.of(1995, 3, 10), null, null, "Douala", null, "Cameroun",
-                1L, Set.of()
+                Set.of()
         );
 
         mockMvc.perform(post("/api/utilisateurs")

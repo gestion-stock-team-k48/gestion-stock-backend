@@ -1,10 +1,13 @@
 package cm.kfokam.stock.client;
 
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.client.dto.ClientRequest;
 import cm.kfokam.stock.client.dto.ClientResponse;
 import cm.kfokam.stock.client.model.Client;
+import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +21,17 @@ class ClientServiceImpl implements ClientService {
 
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
+    private final CurrentUserService currentUserService;
+    private final EntityManager entityManager;
 
     @Override
     public ClientResponse create(ClientRequest request) {
-        if (clientRepository.existsByEmail(request.email())) {
+        Long idEntreprise = currentUserService.getCurrentEntrepriseId();
+        if (clientRepository.existsByEmailAndEntrepriseId(request.email(), idEntreprise)) {
             throw new DuplicateEmailException("L'email '%s' est déjà utilisé".formatted(request.email()));
         }
         Client client = clientMapper.toEntity(request);
+        client.setEntreprise(entityManager.getReference(Entreprise.class, idEntreprise));
         Client saved = clientRepository.save(client);
         return clientMapper.toResponse(saved);
     }
@@ -38,14 +45,15 @@ class ClientServiceImpl implements ClientService {
     @Override
     @Transactional(readOnly = true)
     public List<ClientResponse> getAll() {
-        return clientMapper.toResponseList(clientRepository.findAll());
+        return clientMapper.toResponseList(
+                clientRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
     }
 
     @Override
     public ClientResponse update(Long id, ClientRequest request) {
         Client client = findClientOrThrow(id);
 
-        clientRepository.findByEmail(request.email())
+        clientRepository.findByEmailAndEntrepriseId(request.email(), currentUserService.getCurrentEntrepriseId())
                 .filter(existing -> !existing.getId().equals(id))
                 .ifPresent(existing -> {
                     throw new DuplicateEmailException("L'email '%s' est déjà utilisé".formatted(request.email()));
@@ -62,7 +70,7 @@ class ClientServiceImpl implements ClientService {
     }
 
     private Client findClientOrThrow(Long id) {
-        return clientRepository.findById(id)
+        return clientRepository.findByIdAndEntrepriseId(id, currentUserService.getCurrentEntrepriseId())
                 .orElseThrow(() -> new EntityNotFoundException("Client introuvable avec l'id : " + id));
     }
 }

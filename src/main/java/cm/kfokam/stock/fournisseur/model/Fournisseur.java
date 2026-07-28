@@ -1,13 +1,18 @@
 package cm.kfokam.stock.fournisseur.model;
 
 import cm.kfokam.stock.entreprise.model.Adresse;
+import cm.kfokam.stock.entreprise.model.Entreprise;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +20,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "fournisseurs")
+@Table(name = "fournisseurs", uniqueConstraints = @UniqueConstraint(columnNames = {"email", "entreprise_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,7 +38,7 @@ public class Fournisseur {
     @Column(nullable = false, length = 100)
     private String prenom;
 
-    @Column(nullable = false, unique = true, length = 150)
+    @Column(nullable = false, length = 150)
     private String email;
 
     @Column(length = 20)
@@ -43,4 +48,8 @@ public class Fournisseur {
     private Adresse adresse;
 
     private String photo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "entreprise_id", nullable = false)
+    private Entreprise entreprise;
 }

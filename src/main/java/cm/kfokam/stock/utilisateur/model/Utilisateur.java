@@ -63,7 +63,10 @@ public class Utilisateur implements UserDetails {
     @Embedded
     private Adresse adresse;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // EAGER: the JWT filter loads/detaches this entity outside any transaction on every
+    // request (see JwtAuthenticationFilter), so a LAZY association would throw
+    // LazyInitializationException the moment CurrentUserService reads getEntreprise().
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "entreprise_id", nullable = false)
     private Entreprise entreprise;
 

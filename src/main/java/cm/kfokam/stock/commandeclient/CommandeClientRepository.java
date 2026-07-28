@@ -3,13 +3,18 @@ package cm.kfokam.stock.commandeclient;
 import cm.kfokam.stock.commandeclient.model.CommandeClient;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 interface CommandeClientRepository extends JpaRepository<CommandeClient, Long> {
 
-    boolean existsByCodeCommande(String codeCommande);
+    boolean existsByCodeCommandeAndEntrepriseId(String codeCommande, Long entrepriseId);
 
-    Optional<CommandeClient> findByCodeCommande(String codeCommande);
+    Optional<CommandeClient> findByCodeCommandeAndEntrepriseId(String codeCommande, Long entrepriseId);
 
-    long countByCodeCommandeStartingWith(String prefix);
+    Optional<CommandeClient> findByIdAndEntrepriseId(Long id, Long entrepriseId);
+
+    List<CommandeClient> findAllByEntrepriseId(Long entrepriseId);
+
+    long countByCodeCommandeStartingWithAndEntrepriseId(String prefix, Long entrepriseId);
 }

@@ -3,18 +3,23 @@ package cm.kfokam.stock.commandefournisseur;
 import cm.kfokam.stock.article.ArticleService;
 import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.commandefournisseur.dto.CommandeFournisseurRequest;
 import cm.kfokam.stock.commandefournisseur.dto.CommandeFournisseurResponse;
 import cm.kfokam.stock.commandefournisseur.dto.LigneCommandeFournisseurRequest;
 import cm.kfokam.stock.commandefournisseur.model.CommandeFournisseur;
 import cm.kfokam.stock.commandefournisseur.model.EtatCommande;
 import cm.kfokam.stock.commandefournisseur.model.LigneCommandeFournisseur;
+import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
 import cm.kfokam.stock.fournisseur.FournisseurService;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
 import cm.kfokam.stock.fournisseur.model.Fournisseur;
+import cm.kfokam.stock.mvtstk.MvtStkService;
+import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
+import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,17 +51,21 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
     private final CommandeFournisseurMapper commandeFournisseurMapper;
     private final FournisseurService fournisseurService;
     private final ArticleService articleService;
+    private final MvtStkService mvtStkService;
+    private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
 
     @Override
     public CommandeFournisseurResponse create(CommandeFournisseurRequest request) {
-        String codeCommande = resolveCode(request.codeCommande());
+        Long idEntreprise = currentUserService.getCurrentEntrepriseId();
+        String codeCommande = resolveCode(request.codeCommande(), idEntreprise);
         FournisseurResponse fournisseur = fournisseurService.getById(request.idFournisseur());
 
         CommandeFournisseur commandeFournisseur = commandeFournisseurMapper.toEntity(request);
         commandeFournisseur.setCodeCommande(codeCommande);
         commandeFournisseur.setFournisseur(entityManager.getReference(Fournisseur.class, fournisseur.id()));
         commandeFournisseur.setEtatCommande(EtatCommande.EN_PREPARATION);
+        commandeFournisseur.setEntreprise(entityManager.getReference(Entreprise.class, idEntreprise));
 
         List<LigneCommandeFournisseur> lignes = buildLignes(request.lignes(), commandeFournisseur);
         commandeFournisseur.setLignes(lignes);
@@ -75,7 +84,8 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
     @Override
     @Transactional(readOnly = true)
     public List<CommandeFournisseurResponse> getAll() {
-        return commandeFournisseurMapper.toResponseList(commandeFournisseurRepository.findAll());
+        return commandeFournisseurMapper.toResponseList(
+                commandeFournisseurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
     }
 
     @Override
@@ -110,7 +120,19 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
         }
 
         commandeFournisseur.setEtatCommande(nouvelEtat);
-        return commandeFournisseurMapper.toResponse(commandeFournisseurRepository.save(commandeFournisseur));
+        CommandeFournisseur saved = commandeFournisseurRepository.save(commandeFournisseur);
+
+        if (nouvelEtat == EtatCommande.LIVREE) {
+            for (LigneCommandeFournisseur ligne : saved.getLignes()) {
+                mvtStkService.entreeStock(new MvtStkRequest(
+                        ligne.getArticle().getId(),
+                        BigDecimal.valueOf(ligne.getQuantite()),
+                        SourceMvtStk.COMMANDE_FOURNISSEUR
+                ));
+            }
+        }
+
+        return commandeFournisseurMapper.toResponse(saved);
     }
 
     private List<LigneCommandeFournisseur> buildLignes(List<LigneCommandeFournisseurRequest> requests, CommandeFournisseur commandeFournisseur) {
@@ -141,24 +163,24 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
         commandeFournisseur.setTotalTva(totalTtc.subtract(totalHt));
     }
 
-    private String resolveCode(String codeCommande) {
+    private String resolveCode(String codeCommande, Long idEntreprise) {
         if (codeCommande != null && !codeCommande.isBlank()) {
-            if (commandeFournisseurRepository.existsByCodeCommande(codeCommande)) {
+            if (commandeFournisseurRepository.existsByCodeCommandeAndEntrepriseId(codeCommande, idEntreprise)) {
                 throw new DuplicateCodeException("Le code '%s' est déjà utilisé".formatted(codeCommande));
             }
             return codeCommande;
         }
-        return generateCode();
+        return generateCode(idEntreprise);
     }
 
-    private String generateCode() {
+    private String generateCode(Long idEntreprise) {
         String prefix = "%s-%d-".formatted(CODE_PREFIX, Year.now().getValue());
-        long sequence = commandeFournisseurRepository.countByCodeCommandeStartingWith(prefix) + 1;
+        long sequence = commandeFournisseurRepository.countByCodeCommandeStartingWithAndEntrepriseId(prefix, idEntreprise) + 1;
         return "%s%04d".formatted(prefix, sequence);
     }
 
     private CommandeFournisseur findCommandeOrThrow(Long id) {
-        return commandeFournisseurRepository.findById(id)
+        return commandeFournisseurRepository.findByIdAndEntrepriseId(id, currentUserService.getCurrentEntrepriseId())
                 .orElseThrow(() -> new EntityNotFoundException("Commande fournisseur introuvable avec l'id : " + id));
     }
 }

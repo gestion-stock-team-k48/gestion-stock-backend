@@ -13,6 +13,7 @@ import java.util.List;
 interface ArticleMapper {
 
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "entreprise", ignore = true)
     Article toEntity(ArticleRequest request);
 
     @Mapping(target = "categoryId", source = "category.id")

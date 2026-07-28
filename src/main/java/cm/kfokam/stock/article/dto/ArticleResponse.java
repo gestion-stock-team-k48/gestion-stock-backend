@@ -10,6 +10,7 @@ public record ArticleResponse(
         BigDecimal tauxTva,
         BigDecimal prixUnitaireTtc,
         String photo,
+        BigDecimal seuilMinimum,
         Long categoryId,
         String categoryDesignation
 ) {

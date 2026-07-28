@@ -21,6 +21,7 @@ interface CommandeClientMapper {
     @Mapping(target = "totalTva", ignore = true)
     @Mapping(target = "totalTtc", ignore = true)
     @Mapping(target = "lignes", ignore = true)
+    @Mapping(target = "entreprise", ignore = true)
     CommandeClient toEntity(CommandeClientRequest request);
 
     @Mapping(target = "idClient", source = "client.id")

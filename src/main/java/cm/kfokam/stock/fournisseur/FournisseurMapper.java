@@ -16,6 +16,7 @@ interface FournisseurMapper {
     @Mapping(target = "adresse.ville", source = "ville")
     @Mapping(target = "adresse.codePostal", source = "codePostal")
     @Mapping(target = "adresse.pays", source = "pays")
+    @Mapping(target = "entreprise", ignore = true)
     Fournisseur toEntity(FournisseurRequest request);
 
     @Mapping(target = "rue", source = "adresse.rue")

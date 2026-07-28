@@ -21,6 +21,7 @@ interface CommandeFournisseurMapper {
     @Mapping(target = "totalTva", ignore = true)
     @Mapping(target = "totalTtc", ignore = true)
     @Mapping(target = "lignes", ignore = true)
+    @Mapping(target = "entreprise", ignore = true)
     CommandeFournisseur toEntity(CommandeFournisseurRequest request);
 
     @Mapping(target = "idFournisseur", source = "fournisseur.id")

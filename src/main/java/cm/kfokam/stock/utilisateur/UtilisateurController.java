@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/utilisateurs")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class UtilisateurController {
 
     private final UtilisateurService utilisateurService;
@@ -54,6 +56,7 @@ public class UtilisateurController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/change-password")
     public ResponseEntity<Void> changePassword(@AuthenticationPrincipal Utilisateur utilisateur,
                                                 @Valid @RequestBody ChangePasswordRequest request) {

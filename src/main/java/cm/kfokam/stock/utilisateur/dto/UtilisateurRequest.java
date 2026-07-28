@@ -43,9 +43,6 @@ public record UtilisateurRequest(
         @Size(max = 100, message = "Le pays ne doit pas dépasser 100 caractères")
         String pays,
 
-        @NotNull(message = "L'entreprise est obligatoire")
-        Long entrepriseId,
-
         @NotEmpty(message = "Au moins un rôle est obligatoire")
         Set<Role> roles
 ) {

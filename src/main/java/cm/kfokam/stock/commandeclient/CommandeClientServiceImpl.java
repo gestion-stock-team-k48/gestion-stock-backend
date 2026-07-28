@@ -3,6 +3,7 @@ package cm.kfokam.stock.commandeclient;
 import cm.kfokam.stock.article.ArticleService;
 import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.client.ClientService;
 import cm.kfokam.stock.client.dto.ClientResponse;
 import cm.kfokam.stock.client.model.Client;
@@ -12,9 +13,13 @@ import cm.kfokam.stock.commandeclient.dto.LigneCommandeClientRequest;
 import cm.kfokam.stock.commandeclient.model.CommandeClient;
 import cm.kfokam.stock.commandeclient.model.EtatCommande;
 import cm.kfokam.stock.commandeclient.model.LigneCommandeClient;
+import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
+import cm.kfokam.stock.mvtstk.MvtStkService;
+import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
+import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,17 +51,21 @@ class CommandeClientServiceImpl implements CommandeClientService {
     private final CommandeClientMapper commandeClientMapper;
     private final ClientService clientService;
     private final ArticleService articleService;
+    private final MvtStkService mvtStkService;
+    private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
 
     @Override
     public CommandeClientResponse create(CommandeClientRequest request) {
-        String codeCommande = resolveCode(request.codeCommande());
+        Long idEntreprise = currentUserService.getCurrentEntrepriseId();
+        String codeCommande = resolveCode(request.codeCommande(), idEntreprise);
         ClientResponse client = clientService.getById(request.idClient());
 
         CommandeClient commandeClient = commandeClientMapper.toEntity(request);
         commandeClient.setCodeCommande(codeCommande);
         commandeClient.setClient(entityManager.getReference(Client.class, client.id()));
         commandeClient.setEtatCommande(EtatCommande.EN_PREPARATION);
+        commandeClient.setEntreprise(entityManager.getReference(Entreprise.class, idEntreprise));
 
         List<LigneCommandeClient> lignes = buildLignes(request.lignes(), commandeClient);
         commandeClient.setLignes(lignes);
@@ -75,7 +84,8 @@ class CommandeClientServiceImpl implements CommandeClientService {
     @Override
     @Transactional(readOnly = true)
     public List<CommandeClientResponse> getAll() {
-        return commandeClientMapper.toResponseList(commandeClientRepository.findAll());
+        return commandeClientMapper.toResponseList(
+                commandeClientRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
     }
 
     @Override
@@ -110,7 +120,19 @@ class CommandeClientServiceImpl implements CommandeClientService {
         }
 
         commandeClient.setEtatCommande(nouvelEtat);
-        return commandeClientMapper.toResponse(commandeClientRepository.save(commandeClient));
+        CommandeClient saved = commandeClientRepository.save(commandeClient);
+
+        if (nouvelEtat == EtatCommande.LIVREE) {
+            for (LigneCommandeClient ligne : saved.getLignes()) {
+                mvtStkService.sortieStock(new MvtStkRequest(
+                        ligne.getArticle().getId(),
+                        BigDecimal.valueOf(ligne.getQuantite()),
+                        SourceMvtStk.COMMANDE_CLIENT
+                ));
+            }
+        }
+
+        return commandeClientMapper.toResponse(saved);
     }
 
     private List<LigneCommandeClient> buildLignes(List<LigneCommandeClientRequest> requests, CommandeClient commandeClient) {
@@ -141,24 +163,24 @@ class CommandeClientServiceImpl implements CommandeClientService {
         commandeClient.setTotalTva(totalTtc.subtract(totalHt));
     }
 
-    private String resolveCode(String codeCommande) {
+    private String resolveCode(String codeCommande, Long idEntreprise) {
         if (codeCommande != null && !codeCommande.isBlank()) {
-            if (commandeClientRepository.existsByCodeCommande(codeCommande)) {
+            if (commandeClientRepository.existsByCodeCommandeAndEntrepriseId(codeCommande, idEntreprise)) {
                 throw new DuplicateCodeException("Le code '%s' est déjà utilisé".formatted(codeCommande));
             }
             return codeCommande;
         }
-        return generateCode();
+        return generateCode(idEntreprise);
     }
 
-    private String generateCode() {
+    private String generateCode(Long idEntreprise) {
         String prefix = "%s-%d-".formatted(CODE_PREFIX, Year.now().getValue());
-        long sequence = commandeClientRepository.countByCodeCommandeStartingWith(prefix) + 1;
+        long sequence = commandeClientRepository.countByCodeCommandeStartingWithAndEntrepriseId(prefix, idEntreprise) + 1;
         return "%s%04d".formatted(prefix, sequence);
     }
 
     private CommandeClient findCommandeOrThrow(Long id) {
-        return commandeClientRepository.findById(id)
+        return commandeClientRepository.findByIdAndEntrepriseId(id, currentUserService.getCurrentEntrepriseId())
                 .orElseThrow(() -> new EntityNotFoundException("Commande client introuvable avec l'id : " + id));
     }
 }

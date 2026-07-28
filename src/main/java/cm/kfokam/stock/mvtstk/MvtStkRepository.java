@@ -7,5 +7,5 @@ import java.util.List;
 
 interface MvtStkRepository extends JpaRepository<MvtStk, Long> {
 
-    List<MvtStk> findByArticleIdOrderByDateMvtAsc(Long articleId);
+    List<MvtStk> findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(Long articleId, Long idEntreprise);
 }

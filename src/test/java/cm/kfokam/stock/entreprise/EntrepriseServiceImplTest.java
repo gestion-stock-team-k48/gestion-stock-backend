@@ -13,7 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -110,19 +108,6 @@ class EntrepriseServiceImplTest {
     }
 
     @Test
-    void getAll_shouldReturnListOfResponses() {
-        List<Entreprise> entreprises = List.of(entreprise);
-        List<EntrepriseResponse> responses = List.of(response);
-
-        when(entrepriseRepository.findAll()).thenReturn(entreprises);
-        when(entrepriseMapper.toResponseList(entreprises)).thenReturn(responses);
-
-        List<EntrepriseResponse> result = entrepriseService.getAll();
-
-        assertThat(result).containsExactly(response);
-    }
-
-    @Test
     void update_shouldReturnUpdatedResponse_whenValid() {
         EntrepriseRequest updateRequest = new EntrepriseRequest(
                 "Kfokam SARL", "Nouvelle description", null, "Yaoundé", null, "Cameroun",
@@ -180,24 +165,5 @@ class EntrepriseServiceImplTest {
                 .hasMessageContaining("CF-999");
 
         verify(entrepriseRepository, never()).save(any());
-    }
-
-    @Test
-    void delete_shouldDeleteEntreprise_whenFound() {
-        when(entrepriseRepository.findById(1L)).thenReturn(Optional.of(entreprise));
-
-        entrepriseService.delete(1L);
-
-        verify(entrepriseRepository, times(1)).delete(entreprise);
-    }
-
-    @Test
-    void delete_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(entrepriseRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> entrepriseService.delete(99L))
-                .isInstanceOf(EntityNotFoundException.class);
-
-        verify(entrepriseRepository, never()).delete(any());
     }
 }

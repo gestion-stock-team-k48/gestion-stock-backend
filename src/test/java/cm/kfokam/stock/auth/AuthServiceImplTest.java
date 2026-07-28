@@ -2,7 +2,12 @@ package cm.kfokam.stock.auth;
 
 import cm.kfokam.stock.auth.dto.AuthenticationRequest;
 import cm.kfokam.stock.auth.dto.AuthenticationResponse;
+import cm.kfokam.stock.auth.dto.RegisterRequest;
+import cm.kfokam.stock.entreprise.EntrepriseService;
+import cm.kfokam.stock.entreprise.dto.EntrepriseRequest;
+import cm.kfokam.stock.entreprise.dto.EntrepriseResponse;
 import cm.kfokam.stock.exception.InvalidTokenException;
+import cm.kfokam.stock.utilisateur.UtilisateurService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +20,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+
+import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,6 +44,12 @@ class AuthServiceImplTest {
     private UserDetailsService userDetailsService;
 
     @Mock
+    private EntrepriseService entrepriseService;
+
+    @Mock
+    private UtilisateurService utilisateurService;
+
+    @Mock
     private Authentication authentication;
 
     @Mock
@@ -53,6 +66,28 @@ class AuthServiceImplTest {
     @BeforeEach
     void setUp() {
         request = new AuthenticationRequest("francky@kfokam.cm", "P@ssw0rd!");
+    }
+
+    @Test
+    void register_shouldCreateEntrepriseAndInitialAdmin_thenReturnTokens() {
+        RegisterRequest registerRequest = new RegisterRequest(
+                "Kfokam SARL", "Gestion de stock", null, "Douala", null, "Cameroun",
+                "CF-001", "contact@kfokam.cm", "+237600000000", "https://kfokam.cm",
+                "Tchana", "Francky", "francky@kfokam.cm", "P@ssw0rd!", LocalDate.of(1995, 3, 10)
+        );
+        EntrepriseResponse entrepriseResponse = new EntrepriseResponse(1L, "Kfokam SARL", "Gestion de stock",
+                null, "Douala", null, "Cameroun", "CF-001", null, "contact@kfokam.cm", "+237600000000", "https://kfokam.cm");
+
+        when(entrepriseService.create(any(EntrepriseRequest.class))).thenReturn(entrepriseResponse);
+        when(userDetailsService.loadUserByUsername("francky@kfokam.cm")).thenReturn(userDetails);
+        when(jwtService.generateToken(userDetails)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(userDetails)).thenReturn("refresh-token");
+
+        AuthenticationResponse result = authService.register(registerRequest);
+
+        assertThat(result).isEqualTo(new AuthenticationResponse("access-token", "refresh-token"));
+        verify(utilisateurService).createInitialAdmin(1L, "Tchana", "Francky", "francky@kfokam.cm",
+                "P@ssw0rd!", LocalDate.of(1995, 3, 10));
     }
 
     @Test
