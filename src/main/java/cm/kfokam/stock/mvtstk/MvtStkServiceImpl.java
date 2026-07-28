@@ -3,6 +3,9 @@ package cm.kfokam.stock.mvtstk;
 import cm.kfokam.stock.article.ArticleService;
 import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
+import cm.kfokam.stock.auth.CurrentUserService;
+import cm.kfokam.stock.exception.StockInsuffisantException;
+import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 import cm.kfokam.stock.mvtstk.model.MvtStk;
@@ -24,24 +27,37 @@ class MvtStkServiceImpl implements MvtStkService {
     private final MvtStkRepository mvtStkRepository;
     private final MvtStkMapper mvtStkMapper;
     private final ArticleService articleService;
+    private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
     public BigDecimal stockReelArticle(Long idArticle) {
         articleService.getById(idArticle);
+        return calculerStockReel(idArticle, currentUserService.getCurrentEntrepriseId());
+    }
 
-        return mvtStkRepository.findByArticleIdOrderByDateMvtAsc(idArticle).stream()
-                .map(this::quantiteSignee)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    @Override
+    @Transactional(readOnly = true)
+    public List<AlerteStockResponse> articlesEnAlerte() {
+        Long idEntreprise = currentUserService.getCurrentEntrepriseId();
+
+        return articleService.getAll().stream()
+                .map(article -> new AlerteStockResponse(
+                        article.id(), article.code(), article.designation(),
+                        calculerStockReel(article.id(), idEntreprise), article.seuilMinimum()))
+                .filter(alerte -> alerte.quantiteStock().compareTo(alerte.seuilMinimum()) <= 0)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MvtStkResponse> mvtStkArticle(Long idArticle) {
         articleService.getById(idArticle);
+        Long idEntreprise = currentUserService.getCurrentEntrepriseId();
 
-        return mvtStkMapper.toResponseList(mvtStkRepository.findByArticleIdOrderByDateMvtAsc(idArticle));
+        return mvtStkMapper.toResponseList(
+                mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(idArticle, idEntreprise));
     }
 
     @Override
@@ -66,13 +82,30 @@ class MvtStkServiceImpl implements MvtStkService {
 
     private MvtStkResponse enregistrerMouvement(MvtStkRequest request, TypeMvtStk typeMvt) {
         ArticleResponse article = articleService.getById(request.articleId());
+        Long idEntreprise = currentUserService.getCurrentEntrepriseId();
+
+        if (typeMvt == TypeMvtStk.SORTIE || typeMvt == TypeMvtStk.CORRECTION_NEG) {
+            BigDecimal stockActuel = calculerStockReel(article.id(), idEntreprise);
+            if (stockActuel.compareTo(request.quantite()) < 0) {
+                throw new StockInsuffisantException(
+                        "Stock insuffisant pour l'article '%s' : stock actuel %s, quantité demandée %s"
+                                .formatted(article.designation(), stockActuel, request.quantite()));
+            }
+        }
 
         MvtStk mvtStk = mvtStkMapper.toEntity(request);
         mvtStk.setDateMvt(Instant.now());
         mvtStk.setTypeMvt(typeMvt);
         mvtStk.setArticle(entityManager.getReference(Article.class, article.id()));
+        mvtStk.setIdEntreprise(idEntreprise);
 
         return mvtStkMapper.toResponse(mvtStkRepository.save(mvtStk));
+    }
+
+    private BigDecimal calculerStockReel(Long idArticle, Long idEntreprise) {
+        return mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(idArticle, idEntreprise).stream()
+                .map(this::quantiteSignee)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private BigDecimal quantiteSignee(MvtStk mvtStk) {

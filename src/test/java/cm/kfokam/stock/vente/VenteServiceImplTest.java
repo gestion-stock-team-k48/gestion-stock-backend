@@ -3,6 +3,7 @@ package cm.kfokam.stock.vente;
 import cm.kfokam.stock.article.ArticleService;
 import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.mvtstk.MvtStkService;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
@@ -41,6 +42,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class VenteServiceImplTest {
 
+    private static final Long ENTREPRISE_ID = 1L;
+
     @Mock
     private VenteRepository venteRepository;
 
@@ -52,6 +55,9 @@ class VenteServiceImplTest {
 
     @Mock
     private MvtStkService mvtStkService;
+
+    @Mock
+    private CurrentUserService currentUserService;
 
     @Mock
     private EntityManager entityManager;
@@ -68,10 +74,12 @@ class VenteServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+
         article = Article.builder().id(1L).code("ART-01").designation("Ordinateur portable").build();
         articleResponse = new ArticleResponse(1L, "ART-01", "Ordinateur portable",
                 new BigDecimal("500.00"), new BigDecimal("19.25"), new BigDecimal("596.25"),
-                null, 1L, "Informatique");
+                null, new BigDecimal("5"), 1L, "Informatique");
 
         ligneVente = LigneVente.builder()
                 .id(1L)
@@ -91,7 +99,7 @@ class VenteServiceImplTest {
                 .build();
 
         request = new VenteRequest(
-                null, "Vente comptoir", 1L,
+                null, "Vente comptoir",
                 List.of(new LigneVenteRequest(1L, new BigDecimal("2")))
         );
 
@@ -107,7 +115,7 @@ class VenteServiceImplTest {
 
     @Test
     void create_shouldSaveVenteAndLignes_whenValid() {
-        when(venteRepository.countByCodeStartingWith(anyString())).thenReturn(0L);
+        when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
         when(venteMapper.toEntity(request)).thenReturn(new Vente());
         when(articleService.getById(1L)).thenReturn(articleResponse);
         when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
@@ -123,14 +131,14 @@ class VenteServiceImplTest {
     @Test
     void create_shouldVerifyEachArticleExistence_viaArticleService() {
         VenteRequest multiLineRequest = new VenteRequest(
-                null, "Vente comptoir", 1L,
+                null, "Vente comptoir",
                 List.of(new LigneVenteRequest(1L, new BigDecimal("2")), new LigneVenteRequest(2L, new BigDecimal("1")))
         );
         Article article2 = Article.builder().id(2L).code("ART-02").designation("Souris").build();
         ArticleResponse articleResponse2 = new ArticleResponse(2L, "ART-02", "Souris",
-                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, 1L, "Informatique");
+                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique");
 
-        when(venteRepository.countByCodeStartingWith(anyString())).thenReturn(0L);
+        when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
         when(venteMapper.toEntity(multiLineRequest)).thenReturn(new Vente());
         when(articleService.getById(1L)).thenReturn(articleResponse);
         when(articleService.getById(2L)).thenReturn(articleResponse2);
@@ -147,7 +155,7 @@ class VenteServiceImplTest {
 
     @Test
     void create_shouldCallSortieStock_forEachLigneVente() {
-        when(venteRepository.countByCodeStartingWith(anyString())).thenReturn(0L);
+        when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
         when(venteMapper.toEntity(request)).thenReturn(new Vente());
         when(articleService.getById(1L)).thenReturn(articleResponse);
         when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
@@ -160,7 +168,6 @@ class VenteServiceImplTest {
                 mvtRequest.articleId().equals(1L)
                         && mvtRequest.quantite().compareTo(new BigDecimal("2")) == 0
                         && mvtRequest.sourceMvt() == SourceMvtStk.VENTE
-                        && mvtRequest.idEntreprise().equals(1L)
         ));
     }
 
@@ -181,13 +188,13 @@ class VenteServiceImplTest {
                 .build();
 
         VenteRequest multiLineRequest = new VenteRequest(
-                null, "Vente comptoir", 1L,
+                null, "Vente comptoir",
                 List.of(new LigneVenteRequest(1L, new BigDecimal("2")), new LigneVenteRequest(2L, new BigDecimal("3")))
         );
         ArticleResponse articleResponse2 = new ArticleResponse(2L, "ART-02", "Souris",
-                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, 1L, "Informatique");
+                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique");
 
-        when(venteRepository.countByCodeStartingWith(anyString())).thenReturn(0L);
+        when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
         when(venteMapper.toEntity(multiLineRequest)).thenReturn(new Vente());
         when(articleService.getById(1L)).thenReturn(articleResponse);
         when(articleService.getById(2L)).thenReturn(articleResponse2);
@@ -202,7 +209,7 @@ class VenteServiceImplTest {
 
     @Test
     void create_shouldThrowEntityNotFoundException_andNotSaveVente_whenArticleNotFound() {
-        when(venteRepository.countByCodeStartingWith(anyString())).thenReturn(0L);
+        when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
         when(venteMapper.toEntity(request)).thenReturn(new Vente());
         when(articleService.getById(1L)).thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 1"));
 
@@ -220,7 +227,7 @@ class VenteServiceImplTest {
 
     @Test
     void getById_shouldReturnVenteResponse_whenFound() {
-        when(venteRepository.findById(1L)).thenReturn(Optional.of(vente));
+        when(venteRepository.findByIdAndIdEntreprise(1L, ENTREPRISE_ID)).thenReturn(Optional.of(vente));
         when(venteMapper.toResponse(vente)).thenReturn(response);
 
         VenteResponse result = venteService.getById(1L);
@@ -230,7 +237,7 @@ class VenteServiceImplTest {
 
     @Test
     void getById_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(venteRepository.findById(99L)).thenReturn(Optional.empty());
+        when(venteRepository.findByIdAndIdEntreprise(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> venteService.getById(99L))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -239,7 +246,7 @@ class VenteServiceImplTest {
 
     @Test
     void getByCode_shouldReturnVenteResponse_whenFound() {
-        when(venteRepository.findByCode("VT-2026-0001")).thenReturn(Optional.of(vente));
+        when(venteRepository.findByCodeAndIdEntreprise("VT-2026-0001", ENTREPRISE_ID)).thenReturn(Optional.of(vente));
         when(venteMapper.toResponse(vente)).thenReturn(response);
 
         VenteResponse result = venteService.getByCode("VT-2026-0001");
@@ -249,7 +256,7 @@ class VenteServiceImplTest {
 
     @Test
     void getByCode_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(venteRepository.findByCode("VT-INEXISTANT")).thenReturn(Optional.empty());
+        when(venteRepository.findByCodeAndIdEntreprise("VT-INEXISTANT", ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> venteService.getByCode("VT-INEXISTANT"))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -262,7 +269,7 @@ class VenteServiceImplTest {
 
     @Test
     void delete_shouldDeleteVente_whenFound() {
-        when(venteRepository.findById(1L)).thenReturn(Optional.of(vente));
+        when(venteRepository.findByIdAndIdEntreprise(1L, ENTREPRISE_ID)).thenReturn(Optional.of(vente));
 
         venteService.delete(1L);
 
@@ -271,7 +278,7 @@ class VenteServiceImplTest {
 
     @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(venteRepository.findById(99L)).thenReturn(Optional.empty());
+        when(venteRepository.findByIdAndIdEntreprise(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> venteService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class)

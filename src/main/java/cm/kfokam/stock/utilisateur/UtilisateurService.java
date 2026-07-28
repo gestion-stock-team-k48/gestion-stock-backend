@@ -4,11 +4,16 @@ import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface UtilisateurService {
 
     UtilisateurResponse create(UtilisateurRequest request);
+
+    // Self-registration: caller's own password is used directly, mustChangePassword stays false (unlike create()).
+    UtilisateurResponse createInitialAdmin(Long entrepriseId, String nom, String prenom, String email,
+                                            String rawPassword, LocalDate dateDeNaissance);
 
     UtilisateurResponse getById(Long id);
 

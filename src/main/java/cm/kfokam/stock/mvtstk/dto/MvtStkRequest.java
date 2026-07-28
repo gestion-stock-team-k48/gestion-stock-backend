@@ -16,9 +16,6 @@ public record MvtStkRequest(
         BigDecimal quantite,
 
         @NotNull(message = "La source du mouvement est obligatoire")
-        SourceMvtStk sourceMvt,
-
-        @NotNull(message = "L'entreprise est obligatoire")
-        Long idEntreprise
+        SourceMvtStk sourceMvt
 ) {
 }

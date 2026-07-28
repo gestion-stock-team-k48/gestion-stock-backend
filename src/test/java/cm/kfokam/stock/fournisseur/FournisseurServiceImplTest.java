@@ -1,11 +1,13 @@
 package cm.kfokam.stock.fournisseur;
 
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.entreprise.model.Adresse;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.fournisseur.dto.FournisseurRequest;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
 import cm.kfokam.stock.fournisseur.model.Fournisseur;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,11 +30,19 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FournisseurServiceImplTest {
 
+    private static final Long ENTREPRISE_ID = 1L;
+
     @Mock
     private FournisseurRepository fournisseurRepository;
 
     @Mock
     private FournisseurMapper fournisseurMapper;
+
+    @Mock
+    private CurrentUserService currentUserService;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private FournisseurServiceImpl fournisseurService;
@@ -43,6 +53,8 @@ class FournisseurServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+
         fournisseur = Fournisseur.builder()
                 .id(1L)
                 .nom("Kamdem")
@@ -66,7 +78,7 @@ class FournisseurServiceImplTest {
 
     @Test
     void create_shouldReturnResponse_whenEmailNotUsed() {
-        when(fournisseurRepository.existsByEmail("paul@example.com")).thenReturn(false);
+        when(fournisseurRepository.existsByEmailAndEntrepriseId("paul@example.com", ENTREPRISE_ID)).thenReturn(false);
         when(fournisseurMapper.toEntity(request)).thenReturn(fournisseur);
         when(fournisseurRepository.save(fournisseur)).thenReturn(fournisseur);
         when(fournisseurMapper.toResponse(fournisseur)).thenReturn(response);
@@ -79,7 +91,7 @@ class FournisseurServiceImplTest {
 
     @Test
     void create_shouldThrowDuplicateEmailException_whenEmailAlreadyUsed() {
-        when(fournisseurRepository.existsByEmail("paul@example.com")).thenReturn(true);
+        when(fournisseurRepository.existsByEmailAndEntrepriseId("paul@example.com", ENTREPRISE_ID)).thenReturn(true);
 
         assertThatThrownBy(() -> fournisseurService.create(request))
                 .isInstanceOf(DuplicateEmailException.class)
@@ -90,7 +102,7 @@ class FournisseurServiceImplTest {
 
     @Test
     void getById_shouldReturnResponse_whenFound() {
-        when(fournisseurRepository.findById(1L)).thenReturn(Optional.of(fournisseur));
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
         when(fournisseurMapper.toResponse(fournisseur)).thenReturn(response);
 
         FournisseurResponse result = fournisseurService.getById(1L);
@@ -100,7 +112,7 @@ class FournisseurServiceImplTest {
 
     @Test
     void getById_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(fournisseurRepository.findById(99L)).thenReturn(Optional.empty());
+        when(fournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> fournisseurService.getById(99L))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -112,7 +124,7 @@ class FournisseurServiceImplTest {
         List<Fournisseur> fournisseurs = List.of(fournisseur);
         List<FournisseurResponse> responses = List.of(response);
 
-        when(fournisseurRepository.findAll()).thenReturn(fournisseurs);
+        when(fournisseurRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(fournisseurs);
         when(fournisseurMapper.toResponseList(fournisseurs)).thenReturn(responses);
 
         List<FournisseurResponse> result = fournisseurService.getAll();
@@ -135,8 +147,8 @@ class FournisseurServiceImplTest {
                 null, "Yaoundé", null, "Cameroun", "photo2.png"
         );
 
-        when(fournisseurRepository.findById(1L)).thenReturn(Optional.of(fournisseur));
-        when(fournisseurRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
+        when(fournisseurRepository.findByEmailAndEntrepriseId("new@example.com", ENTREPRISE_ID)).thenReturn(Optional.empty());
         doAnswer(invocation -> {
             fournisseur.setEmail("new@example.com");
             fournisseur.setNumTel("+237600000003");
@@ -152,7 +164,7 @@ class FournisseurServiceImplTest {
 
     @Test
     void update_shouldThrowEntityNotFoundException_whenFournisseurNotFound() {
-        when(fournisseurRepository.findById(99L)).thenReturn(Optional.empty());
+        when(fournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> fournisseurService.update(99L, request))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -168,8 +180,8 @@ class FournisseurServiceImplTest {
                 null, "Douala", null, "Cameroun", "photo.png"
         );
 
-        when(fournisseurRepository.findById(1L)).thenReturn(Optional.of(fournisseur));
-        when(fournisseurRepository.findByEmail("other@example.com")).thenReturn(Optional.of(other));
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
+        when(fournisseurRepository.findByEmailAndEntrepriseId("other@example.com", ENTREPRISE_ID)).thenReturn(Optional.of(other));
 
         assertThatThrownBy(() -> fournisseurService.update(1L, updateRequest))
                 .isInstanceOf(DuplicateEmailException.class)
@@ -180,8 +192,8 @@ class FournisseurServiceImplTest {
 
     @Test
     void update_shouldAllowSameEmail_whenEmailUnchanged() {
-        when(fournisseurRepository.findById(1L)).thenReturn(Optional.of(fournisseur));
-        when(fournisseurRepository.findByEmail("paul@example.com")).thenReturn(Optional.of(fournisseur));
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
+        when(fournisseurRepository.findByEmailAndEntrepriseId("paul@example.com", ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
         when(fournisseurRepository.save(fournisseur)).thenReturn(fournisseur);
         when(fournisseurMapper.toResponse(fournisseur)).thenReturn(response);
 
@@ -193,7 +205,7 @@ class FournisseurServiceImplTest {
 
     @Test
     void delete_shouldDeleteFournisseur_whenFound() {
-        when(fournisseurRepository.findById(1L)).thenReturn(Optional.of(fournisseur));
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
 
         fournisseurService.delete(1L);
 
@@ -202,7 +214,7 @@ class FournisseurServiceImplTest {
 
     @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(fournisseurRepository.findById(99L)).thenReturn(Optional.empty());
+        when(fournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> fournisseurService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class);

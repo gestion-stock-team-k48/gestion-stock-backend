@@ -1,53 +1,36 @@
 package cm.kfokam.stock.entreprise;
 
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.entreprise.dto.EntrepriseRequest;
 import cm.kfokam.stock.entreprise.dto.EntrepriseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
+// Creation happens exclusively via POST /api/auth/register (tenant self-registration).
+// No cross-tenant getAll()/delete() here — there is no platform "super-admin" role to gate them behind.
 @RestController
 @RequestMapping("/api/entreprises")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class EntrepriseController {
 
     private final EntrepriseService entrepriseService;
+    private final CurrentUserService currentUserService;
 
-    @PostMapping
-    public ResponseEntity<EntrepriseResponse> create(@Valid @RequestBody EntrepriseRequest request) {
-        EntrepriseResponse response = entrepriseService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @GetMapping("/me")
+    public ResponseEntity<EntrepriseResponse> getMine() {
+        return ResponseEntity.ok(entrepriseService.getById(currentUserService.getCurrentEntrepriseId()));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<EntrepriseResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(entrepriseService.getById(id));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<EntrepriseResponse>> getAll() {
-        return ResponseEntity.ok(entrepriseService.getAll());
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<EntrepriseResponse> update(@PathVariable Long id, @Valid @RequestBody EntrepriseRequest request) {
-        return ResponseEntity.ok(entrepriseService.update(id, request));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        entrepriseService.delete(id);
-        return ResponseEntity.noContent().build();
+    @PutMapping("/me")
+    public ResponseEntity<EntrepriseResponse> updateMine(@Valid @RequestBody EntrepriseRequest request) {
+        return ResponseEntity.ok(entrepriseService.update(currentUserService.getCurrentEntrepriseId(), request));
     }
 }

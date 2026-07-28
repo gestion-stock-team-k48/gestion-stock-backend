@@ -15,6 +15,7 @@ interface MvtStkMapper {
     @Mapping(target = "dateMvt", ignore = true)
     @Mapping(target = "typeMvt", ignore = true)
     @Mapping(target = "article", ignore = true)
+    @Mapping(target = "idEntreprise", ignore = true)
     MvtStk toEntity(MvtStkRequest request);
 
     @Mapping(target = "articleId", source = "article.id")

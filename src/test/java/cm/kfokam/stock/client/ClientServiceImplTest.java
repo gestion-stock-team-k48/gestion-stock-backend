@@ -1,11 +1,13 @@
 package cm.kfokam.stock.client;
 
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.client.dto.ClientRequest;
 import cm.kfokam.stock.client.dto.ClientResponse;
 import cm.kfokam.stock.client.model.Client;
 import cm.kfokam.stock.entreprise.model.Adresse;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,11 +30,19 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ClientServiceImplTest {
 
+    private static final Long ENTREPRISE_ID = 1L;
+
     @Mock
     private ClientRepository clientRepository;
 
     @Mock
     private ClientMapper clientMapper;
+
+    @Mock
+    private CurrentUserService currentUserService;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private ClientServiceImpl clientService;
@@ -43,6 +53,8 @@ class ClientServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+
         client = Client.builder()
                 .id(1L)
                 .nom("Ngono")
@@ -66,7 +78,7 @@ class ClientServiceImplTest {
 
     @Test
     void create_shouldReturnResponse_whenEmailNotUsed() {
-        when(clientRepository.existsByEmail("ange@example.com")).thenReturn(false);
+        when(clientRepository.existsByEmailAndEntrepriseId("ange@example.com", ENTREPRISE_ID)).thenReturn(false);
         when(clientMapper.toEntity(request)).thenReturn(client);
         when(clientRepository.save(client)).thenReturn(client);
         when(clientMapper.toResponse(client)).thenReturn(response);
@@ -79,7 +91,7 @@ class ClientServiceImplTest {
 
     @Test
     void create_shouldThrowDuplicateEmailException_whenEmailAlreadyUsed() {
-        when(clientRepository.existsByEmail("ange@example.com")).thenReturn(true);
+        when(clientRepository.existsByEmailAndEntrepriseId("ange@example.com", ENTREPRISE_ID)).thenReturn(true);
 
         assertThatThrownBy(() -> clientService.create(request))
                 .isInstanceOf(DuplicateEmailException.class)
@@ -90,7 +102,7 @@ class ClientServiceImplTest {
 
     @Test
     void getById_shouldReturnResponse_whenFound() {
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
         when(clientMapper.toResponse(client)).thenReturn(response);
 
         ClientResponse result = clientService.getById(1L);
@@ -100,7 +112,7 @@ class ClientServiceImplTest {
 
     @Test
     void getById_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(clientRepository.findById(99L)).thenReturn(Optional.empty());
+        when(clientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> clientService.getById(99L))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -112,7 +124,7 @@ class ClientServiceImplTest {
         List<Client> clients = List.of(client);
         List<ClientResponse> responses = List.of(response);
 
-        when(clientRepository.findAll()).thenReturn(clients);
+        when(clientRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(clients);
         when(clientMapper.toResponseList(clients)).thenReturn(responses);
 
         List<ClientResponse> result = clientService.getAll();
@@ -135,8 +147,8 @@ class ClientServiceImplTest {
                 null, "Yaoundé", null, "Cameroun", "photo2.png"
         );
 
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(clientRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
+        when(clientRepository.findByEmailAndEntrepriseId("new@example.com", ENTREPRISE_ID)).thenReturn(Optional.empty());
         doAnswer(invocation -> {
             client.setEmail("new@example.com");
             client.setNumTel("+237600000001");
@@ -152,7 +164,7 @@ class ClientServiceImplTest {
 
     @Test
     void update_shouldThrowEntityNotFoundException_whenClientNotFound() {
-        when(clientRepository.findById(99L)).thenReturn(Optional.empty());
+        when(clientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> clientService.update(99L, request))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -168,8 +180,8 @@ class ClientServiceImplTest {
                 null, "Douala", null, "Cameroun", "photo.png"
         );
 
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(clientRepository.findByEmail("other@example.com")).thenReturn(Optional.of(otherClient));
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
+        when(clientRepository.findByEmailAndEntrepriseId("other@example.com", ENTREPRISE_ID)).thenReturn(Optional.of(otherClient));
 
         assertThatThrownBy(() -> clientService.update(1L, updateRequest))
                 .isInstanceOf(DuplicateEmailException.class)
@@ -180,8 +192,8 @@ class ClientServiceImplTest {
 
     @Test
     void update_shouldAllowSameEmail_whenEmailUnchanged() {
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-        when(clientRepository.findByEmail("ange@example.com")).thenReturn(Optional.of(client));
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
+        when(clientRepository.findByEmailAndEntrepriseId("ange@example.com", ENTREPRISE_ID)).thenReturn(Optional.of(client));
         when(clientRepository.save(client)).thenReturn(client);
         when(clientMapper.toResponse(client)).thenReturn(response);
 
@@ -193,7 +205,7 @@ class ClientServiceImplTest {
 
     @Test
     void delete_shouldDeleteClient_whenFound() {
-        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
 
         clientService.delete(1L);
 
@@ -202,7 +214,7 @@ class ClientServiceImplTest {
 
     @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(clientRepository.findById(99L)).thenReturn(Optional.empty());
+        when(clientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> clientService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class);

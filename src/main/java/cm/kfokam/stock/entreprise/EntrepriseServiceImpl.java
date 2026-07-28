@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -36,12 +34,6 @@ class EntrepriseServiceImpl implements EntrepriseService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<EntrepriseResponse> getAll() {
-        return entrepriseMapper.toResponseList(entrepriseRepository.findAll());
-    }
-
-    @Override
     public EntrepriseResponse update(Long id, EntrepriseRequest request) {
         Entreprise entreprise = findEntrepriseOrThrow(id);
 
@@ -53,12 +45,6 @@ class EntrepriseServiceImpl implements EntrepriseService {
 
         entrepriseMapper.updateEntityFromRequest(request, entreprise);
         return entrepriseMapper.toResponse(entrepriseRepository.save(entreprise));
-    }
-
-    @Override
-    public void delete(Long id) {
-        Entreprise entreprise = findEntrepriseOrThrow(id);
-        entrepriseRepository.delete(entreprise);
     }
 
     private Entreprise findEntrepriseOrThrow(Long id) {

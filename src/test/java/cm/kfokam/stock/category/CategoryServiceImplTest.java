@@ -1,10 +1,12 @@
 package cm.kfokam.stock.category;
 
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.category.dto.CategoryRequest;
 import cm.kfokam.stock.category.dto.CategoryResponse;
 import cm.kfokam.stock.category.model.Category;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,11 +29,19 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceImplTest {
 
+    private static final Long ENTREPRISE_ID = 1L;
+
     @Mock
     private CategoryRepository categoryRepository;
 
     @Mock
     private CategoryMapper categoryMapper;
+
+    @Mock
+    private CurrentUserService currentUserService;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private CategoryServiceImpl categoryService;
@@ -42,6 +52,8 @@ class CategoryServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+
         category = Category.builder()
                 .id(1L)
                 .code("CAT-01")
@@ -54,7 +66,7 @@ class CategoryServiceImplTest {
 
     @Test
     void create_shouldReturnResponse_whenCodeNotUsed() {
-        when(categoryRepository.existsByCode("CAT-01")).thenReturn(false);
+        when(categoryRepository.existsByCodeAndEntrepriseId("CAT-01", ENTREPRISE_ID)).thenReturn(false);
         when(categoryMapper.toEntity(request)).thenReturn(category);
         when(categoryRepository.save(category)).thenReturn(category);
         when(categoryMapper.toResponse(category)).thenReturn(response);
@@ -67,7 +79,7 @@ class CategoryServiceImplTest {
 
     @Test
     void create_shouldThrowDuplicateCodeException_whenCodeAlreadyUsed() {
-        when(categoryRepository.existsByCode("CAT-01")).thenReturn(true);
+        when(categoryRepository.existsByCodeAndEntrepriseId("CAT-01", ENTREPRISE_ID)).thenReturn(true);
 
         assertThatThrownBy(() -> categoryService.create(request))
                 .isInstanceOf(DuplicateCodeException.class)
@@ -78,7 +90,7 @@ class CategoryServiceImplTest {
 
     @Test
     void getById_shouldReturnResponse_whenFound() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(category));
         when(categoryMapper.toResponse(category)).thenReturn(response);
 
         CategoryResponse result = categoryService.getById(1L);
@@ -88,7 +100,7 @@ class CategoryServiceImplTest {
 
     @Test
     void getById_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> categoryService.getById(99L))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -100,7 +112,7 @@ class CategoryServiceImplTest {
         List<Category> categories = List.of(category);
         List<CategoryResponse> responses = List.of(response);
 
-        when(categoryRepository.findAll()).thenReturn(categories);
+        when(categoryRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(categories);
         when(categoryMapper.toResponseList(categories)).thenReturn(responses);
 
         List<CategoryResponse> result = categoryService.getAll();
@@ -114,8 +126,8 @@ class CategoryServiceImplTest {
         Category updatedCategory = Category.builder().id(1L).code("CAT-02").designation("Bureautique").build();
         CategoryResponse updatedResponse = new CategoryResponse(1L, "CAT-02", "Bureautique");
 
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
-        when(categoryRepository.findByCode("CAT-02")).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByCodeAndEntrepriseId("CAT-02", ENTREPRISE_ID)).thenReturn(Optional.empty());
         doAnswer(invocation -> {
             category.setCode("CAT-02");
             category.setDesignation("Bureautique");
@@ -131,7 +143,7 @@ class CategoryServiceImplTest {
 
     @Test
     void update_shouldThrowEntityNotFoundException_whenCategoryNotFound() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> categoryService.update(99L, request))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -144,8 +156,8 @@ class CategoryServiceImplTest {
         Category otherCategory = Category.builder().id(2L).code("CAT-02").designation("Autre").build();
         CategoryRequest updateRequest = new CategoryRequest("CAT-02", "Bureautique");
 
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
-        when(categoryRepository.findByCode("CAT-02")).thenReturn(Optional.of(otherCategory));
+        when(categoryRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByCodeAndEntrepriseId("CAT-02", ENTREPRISE_ID)).thenReturn(Optional.of(otherCategory));
 
         assertThatThrownBy(() -> categoryService.update(1L, updateRequest))
                 .isInstanceOf(DuplicateCodeException.class)
@@ -156,8 +168,8 @@ class CategoryServiceImplTest {
 
     @Test
     void update_shouldAllowSameCode_whenCodeUnchanged() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
-        when(categoryRepository.findByCode("CAT-01")).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByCodeAndEntrepriseId("CAT-01", ENTREPRISE_ID)).thenReturn(Optional.of(category));
         when(categoryRepository.save(category)).thenReturn(category);
         when(categoryMapper.toResponse(category)).thenReturn(response);
 
@@ -169,7 +181,7 @@ class CategoryServiceImplTest {
 
     @Test
     void delete_shouldDeleteCategory_whenFound() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(category));
 
         categoryService.delete(1L);
 
@@ -178,7 +190,7 @@ class CategoryServiceImplTest {
 
     @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> categoryService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class);

@@ -1,5 +1,6 @@
 package cm.kfokam.stock.commandefournisseur.model;
 
+import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.fournisseur.model.Fournisseur;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -14,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "commandes_fournisseur")
+@Table(name = "commandes_fournisseur", uniqueConstraints = @UniqueConstraint(columnNames = {"code_commande", "entreprise_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,7 +40,7 @@ public class CommandeFournisseur {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, length = 30)
     private String codeCommande;
 
     @Column(nullable = false)
@@ -64,4 +66,8 @@ public class CommandeFournisseur {
     @Builder.Default
     @OneToMany(mappedBy = "commandeFournisseur", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LigneCommandeFournisseur> lignes = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "entreprise_id", nullable = false)
+    private Entreprise entreprise;
 }

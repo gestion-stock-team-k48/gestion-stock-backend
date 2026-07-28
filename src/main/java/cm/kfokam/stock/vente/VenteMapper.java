@@ -17,6 +17,7 @@ interface VenteMapper {
     @Mapping(target = "code", ignore = true)
     @Mapping(target = "dateVente", ignore = true)
     @Mapping(target = "lignes", ignore = true)
+    @Mapping(target = "idEntreprise", ignore = true)
     Vente toEntity(VenteRequest request);
 
     VenteResponse toResponse(Vente vente);

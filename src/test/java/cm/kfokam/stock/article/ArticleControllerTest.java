@@ -49,6 +49,7 @@ class ArticleControllerTest {
                 new BigDecimal("19.25"),
                 new BigDecimal("596.25"),
                 "photo.png",
+                new BigDecimal("5"),
                 1L
         );
     }
@@ -62,6 +63,7 @@ class ArticleControllerTest {
                 new BigDecimal("19.25"),
                 new BigDecimal("596.25"),
                 "photo.png",
+                new BigDecimal("5"),
                 1L,
                 "Informatique"
         );
@@ -88,7 +90,7 @@ class ArticleControllerTest {
     void create_shouldReturn400_whenCodeIsBlank() throws Exception {
         ArticleRequest invalidRequest = new ArticleRequest(
                 " ", "Ordinateur portable", new BigDecimal("500.00"),
-                new BigDecimal("19.25"), new BigDecimal("596.25"), "photo.png", 1L
+                new BigDecimal("19.25"), new BigDecimal("596.25"), "photo.png", new BigDecimal("5"), 1L
         );
 
         mockMvc.perform(post("/api/articles")
@@ -103,7 +105,7 @@ class ArticleControllerTest {
     void create_shouldReturn400_whenCategoryIdIsMissing() throws Exception {
         ArticleRequest invalidRequest = new ArticleRequest(
                 "ART-01", "Ordinateur portable", new BigDecimal("500.00"),
-                new BigDecimal("19.25"), new BigDecimal("596.25"), "photo.png", null
+                new BigDecimal("19.25"), new BigDecimal("596.25"), "photo.png", new BigDecimal("5"), null
         );
 
         mockMvc.perform(post("/api/articles")
@@ -164,7 +166,7 @@ class ArticleControllerTest {
         List<ArticleResponse> responses = List.of(
                 sampleResponse(),
                 new ArticleResponse(2L, "ART-02", "Souris", new BigDecimal("10.00"),
-                        new BigDecimal("19.25"), new BigDecimal("11.93"), null, 1L, "Informatique")
+                        new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique")
         );
         when(articleService.getAll()).thenReturn(responses);
 

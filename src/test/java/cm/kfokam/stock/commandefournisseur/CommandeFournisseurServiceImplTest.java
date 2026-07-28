@@ -3,18 +3,23 @@ package cm.kfokam.stock.commandefournisseur;
 import cm.kfokam.stock.article.ArticleService;
 import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.commandefournisseur.dto.CommandeFournisseurRequest;
 import cm.kfokam.stock.commandefournisseur.dto.CommandeFournisseurResponse;
 import cm.kfokam.stock.commandefournisseur.dto.LigneCommandeFournisseurRequest;
 import cm.kfokam.stock.commandefournisseur.model.CommandeFournisseur;
 import cm.kfokam.stock.commandefournisseur.model.EtatCommande;
 import cm.kfokam.stock.commandefournisseur.model.LigneCommandeFournisseur;
+import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
 import cm.kfokam.stock.fournisseur.FournisseurService;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
 import cm.kfokam.stock.fournisseur.model.Fournisseur;
+import cm.kfokam.stock.mvtstk.MvtStkService;
+import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
+import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,6 +47,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CommandeFournisseurServiceImplTest {
+
+    private static final Long ENTREPRISE_ID = 1L;
 
     @Mock
     private CommandeFournisseurRepository commandeFournisseurRepository;
@@ -53,6 +61,12 @@ class CommandeFournisseurServiceImplTest {
 
     @Mock
     private ArticleService articleService;
+
+    @Mock
+    private MvtStkService mvtStkService;
+
+    @Mock
+    private CurrentUserService currentUserService;
 
     @Mock
     private EntityManager entityManager;
@@ -71,13 +85,18 @@ class CommandeFournisseurServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+
+        Entreprise entreprise = Entreprise.builder().id(ENTREPRISE_ID).nom("Kfokam SARL").build();
+        lenient().when(entityManager.getReference(Entreprise.class, ENTREPRISE_ID)).thenReturn(entreprise);
+
         fournisseur = Fournisseur.builder().id(1L).nom("Martin").prenom("Paul").email("paul@martin.com").build();
         fournisseurResponse = new FournisseurResponse(1L, "Martin", "Paul", "paul@martin.com", null, null, null, null, null, null);
 
         article = Article.builder().id(1L).code("ART-01").designation("Ordinateur portable").build();
         articleResponse = new ArticleResponse(1L, "ART-01", "Ordinateur portable",
                 new BigDecimal("500.00"), new BigDecimal("19.25"), new BigDecimal("596.25"),
-                null, 1L, "Informatique");
+                null, new BigDecimal("5"), 1L, "Informatique");
 
         ligne = LigneCommandeFournisseur.builder()
                 .id(1L)
@@ -119,7 +138,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void create_shouldReturnResponse_whenValid() {
-        when(commandeFournisseurRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeFournisseurRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
         when(commandeFournisseurMapper.toEntity(request)).thenReturn(new CommandeFournisseur());
         when(entityManager.getReference(Fournisseur.class, 1L)).thenReturn(fournisseur);
@@ -136,7 +155,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void create_shouldGenerateCode_whenCodeNotProvided() {
-        when(commandeFournisseurRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(4L);
+        when(commandeFournisseurRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(4L);
         when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
         when(commandeFournisseurMapper.toEntity(request)).thenReturn(new CommandeFournisseur());
         when(entityManager.getReference(Fournisseur.class, 1L)).thenReturn(fournisseur);
@@ -162,7 +181,7 @@ class CommandeFournisseurServiceImplTest {
                 List.of(new LigneCommandeFournisseurRequest(1L, 2))
         );
 
-        when(commandeFournisseurRepository.existsByCodeCommande("CF-CUSTOM-01")).thenReturn(false);
+        when(commandeFournisseurRepository.existsByCodeCommandeAndEntrepriseId("CF-CUSTOM-01", ENTREPRISE_ID)).thenReturn(false);
         when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
         when(commandeFournisseurMapper.toEntity(requestWithCode)).thenReturn(new CommandeFournisseur());
         when(entityManager.getReference(Fournisseur.class, 1L)).thenReturn(fournisseur);
@@ -174,7 +193,7 @@ class CommandeFournisseurServiceImplTest {
         commandeFournisseurService.create(requestWithCode);
 
         verify(commandeFournisseurMapper).toResponse(argThatCodeEquals("CF-CUSTOM-01"));
-        verify(commandeFournisseurRepository, never()).countByCodeCommandeStartingWith(anyString());
+        verify(commandeFournisseurRepository, never()).countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any());
     }
 
     @Test
@@ -184,7 +203,7 @@ class CommandeFournisseurServiceImplTest {
                 List.of(new LigneCommandeFournisseurRequest(1L, 2))
         );
 
-        when(commandeFournisseurRepository.existsByCodeCommande("CF-CUSTOM-01")).thenReturn(true);
+        when(commandeFournisseurRepository.existsByCodeCommandeAndEntrepriseId("CF-CUSTOM-01", ENTREPRISE_ID)).thenReturn(true);
 
         assertThatThrownBy(() -> commandeFournisseurService.create(requestWithCode))
                 .isInstanceOf(DuplicateCodeException.class)
@@ -196,7 +215,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void create_shouldThrowEntityNotFoundException_whenFournisseurNotFound() {
-        when(commandeFournisseurRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeFournisseurRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(fournisseurService.getById(1L)).thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 1"));
 
         assertThatThrownBy(() -> commandeFournisseurService.create(request))
@@ -208,7 +227,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void create_shouldThrowEntityNotFoundException_whenArticleNotFound() {
-        when(commandeFournisseurRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeFournisseurRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
         when(commandeFournisseurMapper.toEntity(request)).thenReturn(new CommandeFournisseur());
         when(entityManager.getReference(Fournisseur.class, 1L)).thenReturn(fournisseur);
@@ -222,7 +241,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void create_shouldCalculateTotals_fromLignes() {
-        when(commandeFournisseurRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeFournisseurRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
         when(commandeFournisseurMapper.toEntity(request)).thenReturn(new CommandeFournisseur());
         when(entityManager.getReference(Fournisseur.class, 1L)).thenReturn(fournisseur);
@@ -242,7 +261,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void getById_shouldReturnResponse_whenFound() {
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
         when(commandeFournisseurMapper.toResponse(commandeFournisseur)).thenReturn(response);
 
         CommandeFournisseurResponse result = commandeFournisseurService.getById(1L);
@@ -252,7 +271,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void getById_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(commandeFournisseurRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeFournisseurService.getById(99L))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -264,7 +283,7 @@ class CommandeFournisseurServiceImplTest {
         List<CommandeFournisseur> commandes = List.of(commandeFournisseur);
         List<CommandeFournisseurResponse> responses = List.of(response);
 
-        when(commandeFournisseurRepository.findAll()).thenReturn(commandes);
+        when(commandeFournisseurRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(commandes);
         when(commandeFournisseurMapper.toResponseList(commandes)).thenReturn(responses);
 
         List<CommandeFournisseurResponse> result = commandeFournisseurService.getAll();
@@ -279,7 +298,7 @@ class CommandeFournisseurServiceImplTest {
                 List.of(new LigneCommandeFournisseurRequest(1L, 3))
         );
 
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
         when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
         when(entityManager.getReference(Fournisseur.class, 1L)).thenReturn(fournisseur);
         when(articleService.getById(1L)).thenReturn(articleResponse);
@@ -297,7 +316,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void update_shouldThrowEntityNotFoundException_whenCommandeNotFound() {
-        when(commandeFournisseurRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeFournisseurService.update(99L, request))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -307,7 +326,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void update_shouldThrowEntityNotFoundException_whenFournisseurNotFound() {
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
         when(fournisseurService.getById(1L)).thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 1"));
 
         assertThatThrownBy(() -> commandeFournisseurService.update(1L, request))
@@ -318,7 +337,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void delete_shouldDeleteCommande_whenFound() {
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
 
         commandeFournisseurService.delete(1L);
 
@@ -327,7 +346,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(commandeFournisseurRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeFournisseurService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -337,7 +356,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void updateEtatCommande_shouldTransitionToValidee_whenEnPreparation() {
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
         when(commandeFournisseurRepository.save(commandeFournisseur)).thenReturn(commandeFournisseur);
         when(commandeFournisseurMapper.toResponse(commandeFournisseur)).thenReturn(response);
 
@@ -350,7 +369,7 @@ class CommandeFournisseurServiceImplTest {
     @Test
     void updateEtatCommande_shouldTransitionToLivree_whenValidee() {
         commandeFournisseur.setEtatCommande(EtatCommande.VALIDEE);
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
         when(commandeFournisseurRepository.save(commandeFournisseur)).thenReturn(commandeFournisseur);
         when(commandeFournisseurMapper.toResponse(commandeFournisseur)).thenReturn(response);
 
@@ -360,9 +379,32 @@ class CommandeFournisseurServiceImplTest {
     }
 
     @Test
+    void updateEtatCommande_shouldTriggerEntreeStock_whenTransitioningToLivree() {
+        commandeFournisseur.setEtatCommande(EtatCommande.VALIDEE);
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.save(commandeFournisseur)).thenReturn(commandeFournisseur);
+        when(commandeFournisseurMapper.toResponse(commandeFournisseur)).thenReturn(response);
+
+        commandeFournisseurService.updateEtatCommande(1L, EtatCommande.LIVREE);
+
+        verify(mvtStkService).entreeStock(new MvtStkRequest(1L, new BigDecimal("2"), SourceMvtStk.COMMANDE_FOURNISSEUR));
+    }
+
+    @Test
+    void updateEtatCommande_shouldNotTriggerEntreeStock_whenTransitioningToValidee() {
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.save(commandeFournisseur)).thenReturn(commandeFournisseur);
+        when(commandeFournisseurMapper.toResponse(commandeFournisseur)).thenReturn(response);
+
+        commandeFournisseurService.updateEtatCommande(1L, EtatCommande.VALIDEE);
+
+        verify(mvtStkService, never()).entreeStock(any());
+    }
+
+    @Test
     void updateEtatCommande_shouldThrowInvalidStateTransitionException_whenTransitionNotAllowed() {
         commandeFournisseur.setEtatCommande(EtatCommande.LIVREE);
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
 
         assertThatThrownBy(() -> commandeFournisseurService.updateEtatCommande(1L, EtatCommande.VALIDEE))
                 .isInstanceOf(InvalidStateTransitionException.class)
@@ -374,7 +416,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void updateEtatCommande_shouldThrowInvalidStateTransitionException_whenSkippingSteps() {
-        when(commandeFournisseurRepository.findById(1L)).thenReturn(Optional.of(commandeFournisseur));
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
 
         assertThatThrownBy(() -> commandeFournisseurService.updateEtatCommande(1L, EtatCommande.LIVREE))
                 .isInstanceOf(InvalidStateTransitionException.class);
@@ -384,7 +426,7 @@ class CommandeFournisseurServiceImplTest {
 
     @Test
     void updateEtatCommande_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(commandeFournisseurRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeFournisseurService.updateEtatCommande(99L, EtatCommande.VALIDEE))
                 .isInstanceOf(EntityNotFoundException.class);

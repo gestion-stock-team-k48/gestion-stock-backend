@@ -3,6 +3,7 @@ package cm.kfokam.stock.commandeclient;
 import cm.kfokam.stock.article.ArticleService;
 import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
+import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.client.ClientService;
 import cm.kfokam.stock.client.dto.ClientResponse;
 import cm.kfokam.stock.client.model.Client;
@@ -12,9 +13,13 @@ import cm.kfokam.stock.commandeclient.dto.LigneCommandeClientRequest;
 import cm.kfokam.stock.commandeclient.model.CommandeClient;
 import cm.kfokam.stock.commandeclient.model.EtatCommande;
 import cm.kfokam.stock.commandeclient.model.LigneCommandeClient;
+import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
+import cm.kfokam.stock.mvtstk.MvtStkService;
+import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
+import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,6 +47,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CommandeClientServiceImplTest {
+
+    private static final Long ENTREPRISE_ID = 1L;
 
     @Mock
     private CommandeClientRepository commandeClientRepository;
@@ -53,6 +61,12 @@ class CommandeClientServiceImplTest {
 
     @Mock
     private ArticleService articleService;
+
+    @Mock
+    private MvtStkService mvtStkService;
+
+    @Mock
+    private CurrentUserService currentUserService;
 
     @Mock
     private EntityManager entityManager;
@@ -71,13 +85,18 @@ class CommandeClientServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+
+        Entreprise entreprise = Entreprise.builder().id(ENTREPRISE_ID).nom("Kfokam SARL").build();
+        lenient().when(entityManager.getReference(Entreprise.class, ENTREPRISE_ID)).thenReturn(entreprise);
+
         client = Client.builder().id(1L).nom("Doe").prenom("John").email("john@doe.com").build();
         clientResponse = new ClientResponse(1L, "Doe", "John", "john@doe.com", null, null, null, null, null, null);
 
         article = Article.builder().id(1L).code("ART-01").designation("Ordinateur portable").build();
         articleResponse = new ArticleResponse(1L, "ART-01", "Ordinateur portable",
                 new BigDecimal("500.00"), new BigDecimal("19.25"), new BigDecimal("596.25"),
-                null, 1L, "Informatique");
+                null, new BigDecimal("5"), 1L, "Informatique");
 
         ligne = LigneCommandeClient.builder()
                 .id(1L)
@@ -119,7 +138,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void create_shouldReturnResponse_whenValid() {
-        when(commandeClientRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeClientRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(clientService.getById(1L)).thenReturn(clientResponse);
         when(commandeClientMapper.toEntity(request)).thenReturn(new CommandeClient());
         when(entityManager.getReference(Client.class, 1L)).thenReturn(client);
@@ -136,7 +155,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void create_shouldGenerateCode_whenCodeNotProvided() {
-        when(commandeClientRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(4L);
+        when(commandeClientRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(4L);
         when(clientService.getById(1L)).thenReturn(clientResponse);
         when(commandeClientMapper.toEntity(request)).thenReturn(new CommandeClient());
         when(entityManager.getReference(Client.class, 1L)).thenReturn(client);
@@ -162,7 +181,7 @@ class CommandeClientServiceImplTest {
                 List.of(new LigneCommandeClientRequest(1L, 2))
         );
 
-        when(commandeClientRepository.existsByCodeCommande("CC-CUSTOM-01")).thenReturn(false);
+        when(commandeClientRepository.existsByCodeCommandeAndEntrepriseId("CC-CUSTOM-01", ENTREPRISE_ID)).thenReturn(false);
         when(clientService.getById(1L)).thenReturn(clientResponse);
         when(commandeClientMapper.toEntity(requestWithCode)).thenReturn(new CommandeClient());
         when(entityManager.getReference(Client.class, 1L)).thenReturn(client);
@@ -174,7 +193,7 @@ class CommandeClientServiceImplTest {
         commandeClientService.create(requestWithCode);
 
         verify(commandeClientMapper).toResponse(argThatCodeEquals("CC-CUSTOM-01"));
-        verify(commandeClientRepository, never()).countByCodeCommandeStartingWith(anyString());
+        verify(commandeClientRepository, never()).countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any());
     }
 
     @Test
@@ -184,7 +203,7 @@ class CommandeClientServiceImplTest {
                 List.of(new LigneCommandeClientRequest(1L, 2))
         );
 
-        when(commandeClientRepository.existsByCodeCommande("CC-CUSTOM-01")).thenReturn(true);
+        when(commandeClientRepository.existsByCodeCommandeAndEntrepriseId("CC-CUSTOM-01", ENTREPRISE_ID)).thenReturn(true);
 
         assertThatThrownBy(() -> commandeClientService.create(requestWithCode))
                 .isInstanceOf(DuplicateCodeException.class)
@@ -196,7 +215,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void create_shouldThrowEntityNotFoundException_whenClientNotFound() {
-        when(commandeClientRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeClientRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(clientService.getById(1L)).thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 1"));
 
         assertThatThrownBy(() -> commandeClientService.create(request))
@@ -208,7 +227,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void create_shouldThrowEntityNotFoundException_whenArticleNotFound() {
-        when(commandeClientRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeClientRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(clientService.getById(1L)).thenReturn(clientResponse);
         when(commandeClientMapper.toEntity(request)).thenReturn(new CommandeClient());
         when(entityManager.getReference(Client.class, 1L)).thenReturn(client);
@@ -222,7 +241,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void create_shouldCalculateTotals_fromLignes() {
-        when(commandeClientRepository.countByCodeCommandeStartingWith(anyString())).thenReturn(0L);
+        when(commandeClientRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
         when(clientService.getById(1L)).thenReturn(clientResponse);
         when(commandeClientMapper.toEntity(request)).thenReturn(new CommandeClient());
         when(entityManager.getReference(Client.class, 1L)).thenReturn(client);
@@ -242,7 +261,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void getById_shouldReturnResponse_whenFound() {
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
         when(commandeClientMapper.toResponse(commandeClient)).thenReturn(response);
 
         CommandeClientResponse result = commandeClientService.getById(1L);
@@ -252,7 +271,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void getById_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(commandeClientRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeClientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeClientService.getById(99L))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -264,7 +283,7 @@ class CommandeClientServiceImplTest {
         List<CommandeClient> commandes = List.of(commandeClient);
         List<CommandeClientResponse> responses = List.of(response);
 
-        when(commandeClientRepository.findAll()).thenReturn(commandes);
+        when(commandeClientRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(commandes);
         when(commandeClientMapper.toResponseList(commandes)).thenReturn(responses);
 
         List<CommandeClientResponse> result = commandeClientService.getAll();
@@ -279,7 +298,7 @@ class CommandeClientServiceImplTest {
                 List.of(new LigneCommandeClientRequest(1L, 3))
         );
 
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
         when(clientService.getById(1L)).thenReturn(clientResponse);
         when(entityManager.getReference(Client.class, 1L)).thenReturn(client);
         when(articleService.getById(1L)).thenReturn(articleResponse);
@@ -297,7 +316,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void update_shouldThrowEntityNotFoundException_whenCommandeNotFound() {
-        when(commandeClientRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeClientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeClientService.update(99L, request))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -307,7 +326,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void update_shouldThrowEntityNotFoundException_whenClientNotFound() {
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
         when(clientService.getById(1L)).thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 1"));
 
         assertThatThrownBy(() -> commandeClientService.update(1L, request))
@@ -318,7 +337,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void delete_shouldDeleteCommande_whenFound() {
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
 
         commandeClientService.delete(1L);
 
@@ -327,7 +346,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(commandeClientRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeClientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeClientService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -337,7 +356,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void updateEtatCommande_shouldTransitionToValidee_whenEnPreparation() {
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
         when(commandeClientRepository.save(commandeClient)).thenReturn(commandeClient);
         when(commandeClientMapper.toResponse(commandeClient)).thenReturn(response);
 
@@ -350,7 +369,7 @@ class CommandeClientServiceImplTest {
     @Test
     void updateEtatCommande_shouldTransitionToLivree_whenValidee() {
         commandeClient.setEtatCommande(EtatCommande.VALIDEE);
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
         when(commandeClientRepository.save(commandeClient)).thenReturn(commandeClient);
         when(commandeClientMapper.toResponse(commandeClient)).thenReturn(response);
 
@@ -360,9 +379,32 @@ class CommandeClientServiceImplTest {
     }
 
     @Test
+    void updateEtatCommande_shouldTriggerSortieStock_whenTransitioningToLivree() {
+        commandeClient.setEtatCommande(EtatCommande.VALIDEE);
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.save(commandeClient)).thenReturn(commandeClient);
+        when(commandeClientMapper.toResponse(commandeClient)).thenReturn(response);
+
+        commandeClientService.updateEtatCommande(1L, EtatCommande.LIVREE);
+
+        verify(mvtStkService).sortieStock(new MvtStkRequest(1L, new BigDecimal("2"), SourceMvtStk.COMMANDE_CLIENT));
+    }
+
+    @Test
+    void updateEtatCommande_shouldNotTriggerSortieStock_whenTransitioningToValidee() {
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.save(commandeClient)).thenReturn(commandeClient);
+        when(commandeClientMapper.toResponse(commandeClient)).thenReturn(response);
+
+        commandeClientService.updateEtatCommande(1L, EtatCommande.VALIDEE);
+
+        verify(mvtStkService, never()).sortieStock(any());
+    }
+
+    @Test
     void updateEtatCommande_shouldThrowInvalidStateTransitionException_whenTransitionNotAllowed() {
         commandeClient.setEtatCommande(EtatCommande.LIVREE);
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
 
         assertThatThrownBy(() -> commandeClientService.updateEtatCommande(1L, EtatCommande.VALIDEE))
                 .isInstanceOf(InvalidStateTransitionException.class)
@@ -374,7 +416,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void updateEtatCommande_shouldThrowInvalidStateTransitionException_whenSkippingSteps() {
-        when(commandeClientRepository.findById(1L)).thenReturn(Optional.of(commandeClient));
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
 
         assertThatThrownBy(() -> commandeClientService.updateEtatCommande(1L, EtatCommande.LIVREE))
                 .isInstanceOf(InvalidStateTransitionException.class);
@@ -384,7 +426,7 @@ class CommandeClientServiceImplTest {
 
     @Test
     void updateEtatCommande_shouldThrowEntityNotFoundException_whenNotFound() {
-        when(commandeClientRepository.findById(99L)).thenReturn(Optional.empty());
+        when(commandeClientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commandeClientService.updateEtatCommande(99L, EtatCommande.VALIDEE))
                 .isInstanceOf(EntityNotFoundException.class);
