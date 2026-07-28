@@ -13,6 +13,7 @@ import cm.kfokam.stock.commandeclient.dto.LigneCommandeClientRequest;
 import cm.kfokam.stock.commandeclient.model.CommandeClient;
 import cm.kfokam.stock.commandeclient.model.EtatCommande;
 import cm.kfokam.stock.commandeclient.model.LigneCommandeClient;
+import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
@@ -66,6 +67,9 @@ class CommandeClientServiceImplTest {
     private MvtStkService mvtStkService;
 
     @Mock
+    private EmailService emailService;
+
+    @Mock
     private CurrentUserService currentUserService;
 
     @Mock
@@ -85,7 +89,7 @@ class CommandeClientServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        lenient().when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
 
         Entreprise entreprise = Entreprise.builder().id(ENTREPRISE_ID).nom("Kfokam SARL").build();
         lenient().when(entityManager.getReference(Entreprise.class, ENTREPRISE_ID)).thenReturn(entreprise);
@@ -151,6 +155,22 @@ class CommandeClientServiceImplTest {
 
         assertThat(result).isEqualTo(response);
         verify(commandeClientRepository).save(any(CommandeClient.class));
+    }
+
+    @Test
+    void create_shouldSendConfirmationEmail_toClient() {
+        when(commandeClientRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
+        when(clientService.getById(1L)).thenReturn(clientResponse);
+        when(commandeClientMapper.toEntity(request)).thenReturn(new CommandeClient());
+        when(entityManager.getReference(Client.class, 1L)).thenReturn(client);
+        when(articleService.getById(1L)).thenReturn(articleResponse);
+        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
+        when(commandeClientRepository.save(any(CommandeClient.class))).thenReturn(commandeClient);
+        when(commandeClientMapper.toResponse(commandeClient)).thenReturn(response);
+
+        commandeClientService.create(request);
+
+        verify(emailService).envoyerConfirmationCommandeClient("john@doe.com", response);
     }
 
     @Test
@@ -289,6 +309,31 @@ class CommandeClientServiceImplTest {
         List<CommandeClientResponse> result = commandeClientService.getAll();
 
         assertThat(result).containsExactly(response);
+    }
+
+    @Test
+    void getHistoriqueByClient_shouldReturnCommandesForThatClient() {
+        List<CommandeClient> commandes = List.of(commandeClient);
+        List<CommandeClientResponse> responses = List.of(response);
+
+        when(clientService.getById(1L)).thenReturn(clientResponse);
+        when(commandeClientRepository.findAllByClientIdAndEntrepriseIdOrderByDateCommandeDesc(1L, ENTREPRISE_ID))
+                .thenReturn(commandes);
+        when(commandeClientMapper.toResponseList(commandes)).thenReturn(responses);
+
+        List<CommandeClientResponse> result = commandeClientService.getHistoriqueByClient(1L);
+
+        assertThat(result).containsExactly(response);
+    }
+
+    @Test
+    void getHistoriqueByClient_shouldThrowEntityNotFoundException_whenClientNotFound() {
+        when(clientService.getById(99L)).thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"));
+
+        assertThatThrownBy(() -> commandeClientService.getHistoriqueByClient(99L))
+                .isInstanceOf(EntityNotFoundException.class);
+
+        verify(commandeClientRepository, never()).findAllByClientIdAndEntrepriseIdOrderByDateCommandeDesc(any(), any());
     }
 
     @Test

@@ -10,6 +10,7 @@ import cm.kfokam.stock.commandefournisseur.dto.LigneCommandeFournisseurRequest;
 import cm.kfokam.stock.commandefournisseur.model.CommandeFournisseur;
 import cm.kfokam.stock.commandefournisseur.model.EtatCommande;
 import cm.kfokam.stock.commandefournisseur.model.LigneCommandeFournisseur;
+import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
@@ -66,6 +67,9 @@ class CommandeFournisseurServiceImplTest {
     private MvtStkService mvtStkService;
 
     @Mock
+    private EmailService emailService;
+
+    @Mock
     private CurrentUserService currentUserService;
 
     @Mock
@@ -85,7 +89,7 @@ class CommandeFournisseurServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        lenient().when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
 
         Entreprise entreprise = Entreprise.builder().id(ENTREPRISE_ID).nom("Kfokam SARL").build();
         lenient().when(entityManager.getReference(Entreprise.class, ENTREPRISE_ID)).thenReturn(entreprise);
@@ -151,6 +155,22 @@ class CommandeFournisseurServiceImplTest {
 
         assertThat(result).isEqualTo(response);
         verify(commandeFournisseurRepository).save(any(CommandeFournisseur.class));
+    }
+
+    @Test
+    void create_shouldSendOrdreEmail_toFournisseur() {
+        when(commandeFournisseurRepository.countByCodeCommandeStartingWithAndEntrepriseId(anyString(), any())).thenReturn(0L);
+        when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
+        when(commandeFournisseurMapper.toEntity(request)).thenReturn(new CommandeFournisseur());
+        when(entityManager.getReference(Fournisseur.class, 1L)).thenReturn(fournisseur);
+        when(articleService.getById(1L)).thenReturn(articleResponse);
+        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
+        when(commandeFournisseurRepository.save(any(CommandeFournisseur.class))).thenReturn(commandeFournisseur);
+        when(commandeFournisseurMapper.toResponse(commandeFournisseur)).thenReturn(response);
+
+        commandeFournisseurService.create(request);
+
+        verify(emailService).envoyerOrdreCommandeFournisseur("paul@martin.com", response);
     }
 
     @Test
@@ -289,6 +309,31 @@ class CommandeFournisseurServiceImplTest {
         List<CommandeFournisseurResponse> result = commandeFournisseurService.getAll();
 
         assertThat(result).containsExactly(response);
+    }
+
+    @Test
+    void getHistoriqueByFournisseur_shouldReturnCommandesForThatFournisseur() {
+        List<CommandeFournisseur> commandes = List.of(commandeFournisseur);
+        List<CommandeFournisseurResponse> responses = List.of(response);
+
+        when(fournisseurService.getById(1L)).thenReturn(fournisseurResponse);
+        when(commandeFournisseurRepository.findAllByFournisseurIdAndEntrepriseIdOrderByDateCommandeDesc(1L, ENTREPRISE_ID))
+                .thenReturn(commandes);
+        when(commandeFournisseurMapper.toResponseList(commandes)).thenReturn(responses);
+
+        List<CommandeFournisseurResponse> result = commandeFournisseurService.getHistoriqueByFournisseur(1L);
+
+        assertThat(result).containsExactly(response);
+    }
+
+    @Test
+    void getHistoriqueByFournisseur_shouldThrowEntityNotFoundException_whenFournisseurNotFound() {
+        when(fournisseurService.getById(99L)).thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 99"));
+
+        assertThatThrownBy(() -> commandeFournisseurService.getHistoriqueByFournisseur(99L))
+                .isInstanceOf(EntityNotFoundException.class);
+
+        verify(commandeFournisseurRepository, never()).findAllByFournisseurIdAndEntrepriseIdOrderByDateCommandeDesc(any(), any());
     }
 
     @Test

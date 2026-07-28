@@ -42,6 +42,11 @@ public class CommandeFournisseurController {
         return ResponseEntity.ok(commandeFournisseurService.getAll());
     }
 
+    @GetMapping("/fournisseur/{idFournisseur}")
+    public ResponseEntity<List<CommandeFournisseurResponse>> getHistoriqueByFournisseur(@PathVariable Long idFournisseur) {
+        return ResponseEntity.ok(commandeFournisseurService.getHistoriqueByFournisseur(idFournisseur));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<CommandeFournisseurResponse> update(@PathVariable Long id, @Valid @RequestBody CommandeFournisseurRequest request) {
         return ResponseEntity.ok(commandeFournisseurService.update(id, request));

@@ -16,5 +16,7 @@ interface CommandeClientRepository extends JpaRepository<CommandeClient, Long> {
 
     List<CommandeClient> findAllByEntrepriseId(Long entrepriseId);
 
+    List<CommandeClient> findAllByClientIdAndEntrepriseIdOrderByDateCommandeDesc(Long clientId, Long entrepriseId);
+
     long countByCodeCommandeStartingWithAndEntrepriseId(String prefix, Long entrepriseId);
 }

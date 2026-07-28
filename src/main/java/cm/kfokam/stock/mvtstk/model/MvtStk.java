@@ -52,6 +52,9 @@ public class MvtStk {
     @Column(nullable = false, length = 30)
     private SourceMvtStk sourceMvt;
 
+    @Column(length = 255)
+    private String motif;
+
     @Column(nullable = false)
     private Long idEntreprise;
 }

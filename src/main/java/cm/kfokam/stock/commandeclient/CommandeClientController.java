@@ -42,6 +42,11 @@ public class CommandeClientController {
         return ResponseEntity.ok(commandeClientService.getAll());
     }
 
+    @GetMapping("/client/{idClient}")
+    public ResponseEntity<List<CommandeClientResponse>> getHistoriqueByClient(@PathVariable Long idClient) {
+        return ResponseEntity.ok(commandeClientService.getHistoriqueByClient(idClient));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<CommandeClientResponse> update(@PathVariable Long id, @Valid @RequestBody CommandeClientRequest request) {
         return ResponseEntity.ok(commandeClientService.update(id, request));

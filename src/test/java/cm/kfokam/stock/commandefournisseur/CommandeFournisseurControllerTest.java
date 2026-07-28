@@ -173,6 +173,26 @@ class CommandeFournisseurControllerTest {
     }
 
     @Test
+    void getHistoriqueByFournisseur_shouldReturn200WithList() throws Exception {
+        List<CommandeFournisseurResponse> responses = List.of(sampleResponse());
+        when(commandeFournisseurService.getHistoriqueByFournisseur(1L)).thenReturn(responses);
+
+        mockMvc.perform(get("/api/commandes-fournisseur/fournisseur/{idFournisseur}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].idFournisseur").value(1L));
+    }
+
+    @Test
+    void getHistoriqueByFournisseur_shouldReturn404_whenFournisseurNotFound() throws Exception {
+        when(commandeFournisseurService.getHistoriqueByFournisseur(99L))
+                .thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 99"));
+
+        mockMvc.perform(get("/api/commandes-fournisseur/fournisseur/{idFournisseur}", 99L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void update_shouldReturn200_whenValidRequest() throws Exception {
         CommandeFournisseurRequest request = validRequest();
         CommandeFournisseurResponse response = sampleResponse();

@@ -13,6 +13,7 @@ import cm.kfokam.stock.commandeclient.dto.LigneCommandeClientRequest;
 import cm.kfokam.stock.commandeclient.model.CommandeClient;
 import cm.kfokam.stock.commandeclient.model.EtatCommande;
 import cm.kfokam.stock.commandeclient.model.LigneCommandeClient;
+import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
@@ -52,6 +53,7 @@ class CommandeClientServiceImpl implements CommandeClientService {
     private final ClientService clientService;
     private final ArticleService articleService;
     private final MvtStkService mvtStkService;
+    private final EmailService emailService;
     private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
 
@@ -72,7 +74,11 @@ class CommandeClientServiceImpl implements CommandeClientService {
         applyTotaux(commandeClient, lignes);
 
         CommandeClient saved = commandeClientRepository.save(commandeClient);
-        return commandeClientMapper.toResponse(saved);
+        CommandeClientResponse response = commandeClientMapper.toResponse(saved);
+
+        emailService.envoyerConfirmationCommandeClient(client.email(), response);
+
+        return response;
     }
 
     @Override
@@ -86,6 +92,15 @@ class CommandeClientServiceImpl implements CommandeClientService {
     public List<CommandeClientResponse> getAll() {
         return commandeClientMapper.toResponseList(
                 commandeClientRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CommandeClientResponse> getHistoriqueByClient(Long idClient) {
+        ClientResponse client = clientService.getById(idClient);
+        return commandeClientMapper.toResponseList(
+                commandeClientRepository.findAllByClientIdAndEntrepriseIdOrderByDateCommandeDesc(
+                        client.id(), currentUserService.getCurrentEntrepriseId()));
     }
 
     @Override

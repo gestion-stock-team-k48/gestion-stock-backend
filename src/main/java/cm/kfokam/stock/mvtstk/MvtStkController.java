@@ -1,6 +1,7 @@
 package cm.kfokam.stock.mvtstk;
 
 import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
+import cm.kfokam.stock.mvtstk.dto.MvtStkCorrectionRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 import jakarta.validation.Valid;
@@ -35,12 +36,12 @@ public class MvtStkController {
     }
 
     @PostMapping("/correction-positive")
-    public ResponseEntity<MvtStkResponse> correctionStockPos(@Valid @RequestBody MvtStkRequest request) {
+    public ResponseEntity<MvtStkResponse> correctionStockPos(@Valid @RequestBody MvtStkCorrectionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(mvtStkService.correctionStockPos(request));
     }
 
     @PostMapping("/correction-negative")
-    public ResponseEntity<MvtStkResponse> correctionStockNeg(@Valid @RequestBody MvtStkRequest request) {
+    public ResponseEntity<MvtStkResponse> correctionStockNeg(@Valid @RequestBody MvtStkCorrectionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(mvtStkService.correctionStockNeg(request));
     }
 
