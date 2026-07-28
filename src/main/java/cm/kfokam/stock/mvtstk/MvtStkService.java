@@ -1,6 +1,7 @@
 package cm.kfokam.stock.mvtstk;
 
 import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
+import cm.kfokam.stock.mvtstk.dto.MvtStkCorrectionRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 
@@ -19,7 +20,7 @@ public interface MvtStkService {
 
     MvtStkResponse sortieStock(MvtStkRequest request);
 
-    MvtStkResponse correctionStockPos(MvtStkRequest request);
+    MvtStkResponse correctionStockPos(MvtStkCorrectionRequest request);
 
-    MvtStkResponse correctionStockNeg(MvtStkRequest request);
+    MvtStkResponse correctionStockNeg(MvtStkCorrectionRequest request);
 }

@@ -173,6 +173,26 @@ class CommandeClientControllerTest {
     }
 
     @Test
+    void getHistoriqueByClient_shouldReturn200WithList() throws Exception {
+        List<CommandeClientResponse> responses = List.of(sampleResponse());
+        when(commandeClientService.getHistoriqueByClient(1L)).thenReturn(responses);
+
+        mockMvc.perform(get("/api/commandes-client/client/{idClient}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].idClient").value(1L));
+    }
+
+    @Test
+    void getHistoriqueByClient_shouldReturn404_whenClientNotFound() throws Exception {
+        when(commandeClientService.getHistoriqueByClient(99L))
+                .thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"));
+
+        mockMvc.perform(get("/api/commandes-client/client/{idClient}", 99L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void update_shouldReturn200_whenValidRequest() throws Exception {
         CommandeClientRequest request = validRequest();
         CommandeClientResponse response = sampleResponse();

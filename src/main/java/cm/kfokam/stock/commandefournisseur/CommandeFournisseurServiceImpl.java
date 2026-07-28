@@ -10,6 +10,7 @@ import cm.kfokam.stock.commandefournisseur.dto.LigneCommandeFournisseurRequest;
 import cm.kfokam.stock.commandefournisseur.model.CommandeFournisseur;
 import cm.kfokam.stock.commandefournisseur.model.EtatCommande;
 import cm.kfokam.stock.commandefournisseur.model.LigneCommandeFournisseur;
+import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
@@ -52,6 +53,7 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
     private final FournisseurService fournisseurService;
     private final ArticleService articleService;
     private final MvtStkService mvtStkService;
+    private final EmailService emailService;
     private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
 
@@ -72,7 +74,11 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
         applyTotaux(commandeFournisseur, lignes);
 
         CommandeFournisseur saved = commandeFournisseurRepository.save(commandeFournisseur);
-        return commandeFournisseurMapper.toResponse(saved);
+        CommandeFournisseurResponse response = commandeFournisseurMapper.toResponse(saved);
+
+        emailService.envoyerOrdreCommandeFournisseur(fournisseur.email(), response);
+
+        return response;
     }
 
     @Override
@@ -86,6 +92,15 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
     public List<CommandeFournisseurResponse> getAll() {
         return commandeFournisseurMapper.toResponseList(
                 commandeFournisseurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CommandeFournisseurResponse> getHistoriqueByFournisseur(Long idFournisseur) {
+        FournisseurResponse fournisseur = fournisseurService.getById(idFournisseur);
+        return commandeFournisseurMapper.toResponseList(
+                commandeFournisseurRepository.findAllByFournisseurIdAndEntrepriseIdOrderByDateCommandeDesc(
+                        fournisseur.id(), currentUserService.getCurrentEntrepriseId()));
     }
 
     @Override

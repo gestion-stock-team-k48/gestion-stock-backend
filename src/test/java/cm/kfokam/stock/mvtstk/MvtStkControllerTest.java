@@ -2,6 +2,7 @@ package cm.kfokam.stock.mvtstk;
 
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
+import cm.kfokam.stock.mvtstk.dto.MvtStkCorrectionRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
@@ -45,9 +46,13 @@ class MvtStkControllerTest {
         return new MvtStkRequest(1L, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR);
     }
 
+    private MvtStkCorrectionRequest validCorrectionRequest() {
+        return new MvtStkCorrectionRequest(1L, new BigDecimal("5"), "Casse en entrepôt");
+    }
+
     private MvtStkResponse sampleResponse(TypeMvtStk type) {
         return new MvtStkResponse(1L, Instant.parse("2026-07-27T10:00:00Z"), new BigDecimal("5"),
-                1L, "Ordinateur portable", type, SourceMvtStk.COMMANDE_FOURNISSEUR, 1L);
+                1L, "Ordinateur portable", type, SourceMvtStk.COMMANDE_FOURNISSEUR, null, 1L);
     }
 
     @Test
@@ -119,7 +124,7 @@ class MvtStkControllerTest {
 
     @Test
     void correctionPositive_shouldReturn201_whenValidRequest() throws Exception {
-        MvtStkRequest request = validRequest();
+        MvtStkCorrectionRequest request = validCorrectionRequest();
         MvtStkResponse response = sampleResponse(TypeMvtStk.CORRECTION_POS);
 
         when(mvtStkService.correctionStockPos(request)).thenReturn(response);
@@ -132,8 +137,20 @@ class MvtStkControllerTest {
     }
 
     @Test
+    void correctionPositive_shouldReturn400_whenMotifIsBlank() throws Exception {
+        MvtStkCorrectionRequest invalidRequest = new MvtStkCorrectionRequest(1L, new BigDecimal("5"), " ");
+
+        mockMvc.perform(post("/api/mouvements-stock/correction-positive")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+
+        verify(mvtStkService, never()).correctionStockPos(any());
+    }
+
+    @Test
     void correctionNegative_shouldReturn201_whenValidRequest() throws Exception {
-        MvtStkRequest request = validRequest();
+        MvtStkCorrectionRequest request = validCorrectionRequest();
         MvtStkResponse response = sampleResponse(TypeMvtStk.CORRECTION_NEG);
 
         when(mvtStkService.correctionStockNeg(request)).thenReturn(response);
@@ -143,6 +160,18 @@ class MvtStkControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.typeMvt").value("CORRECTION_NEG"));
+    }
+
+    @Test
+    void correctionNegative_shouldReturn400_whenMotifIsBlank() throws Exception {
+        MvtStkCorrectionRequest invalidRequest = new MvtStkCorrectionRequest(1L, new BigDecimal("5"), "");
+
+        mockMvc.perform(post("/api/mouvements-stock/correction-negative")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+
+        verify(mvtStkService, never()).correctionStockNeg(any());
     }
 
     @Test

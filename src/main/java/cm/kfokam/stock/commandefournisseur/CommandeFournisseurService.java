@@ -14,6 +14,8 @@ public interface CommandeFournisseurService {
 
     List<CommandeFournisseurResponse> getAll();
 
+    List<CommandeFournisseurResponse> getHistoriqueByFournisseur(Long idFournisseur);
+
     CommandeFournisseurResponse update(Long id, CommandeFournisseurRequest request);
 
     void delete(Long id);

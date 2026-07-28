@@ -6,9 +6,11 @@ import cm.kfokam.stock.article.model.Article;
 import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.exception.StockInsuffisantException;
 import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
+import cm.kfokam.stock.mvtstk.dto.MvtStkCorrectionRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 import cm.kfokam.stock.mvtstk.model.MvtStk;
+import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import cm.kfokam.stock.mvtstk.model.TypeMvtStk;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -62,42 +64,49 @@ class MvtStkServiceImpl implements MvtStkService {
 
     @Override
     public MvtStkResponse entreeStock(MvtStkRequest request) {
-        return enregistrerMouvement(request, TypeMvtStk.ENTREE);
+        return enregistrerMouvement(request.articleId(), request.quantite(), request.sourceMvt(), null, TypeMvtStk.ENTREE);
     }
 
     @Override
     public MvtStkResponse sortieStock(MvtStkRequest request) {
-        return enregistrerMouvement(request, TypeMvtStk.SORTIE);
+        return enregistrerMouvement(request.articleId(), request.quantite(), request.sourceMvt(), null, TypeMvtStk.SORTIE);
     }
 
     @Override
-    public MvtStkResponse correctionStockPos(MvtStkRequest request) {
-        return enregistrerMouvement(request, TypeMvtStk.CORRECTION_POS);
+    public MvtStkResponse correctionStockPos(MvtStkCorrectionRequest request) {
+        return enregistrerMouvement(request.articleId(), request.quantite(), SourceMvtStk.CORRECTION_MANUELLE,
+                request.motif(), TypeMvtStk.CORRECTION_POS);
     }
 
     @Override
-    public MvtStkResponse correctionStockNeg(MvtStkRequest request) {
-        return enregistrerMouvement(request, TypeMvtStk.CORRECTION_NEG);
+    public MvtStkResponse correctionStockNeg(MvtStkCorrectionRequest request) {
+        return enregistrerMouvement(request.articleId(), request.quantite(), SourceMvtStk.CORRECTION_MANUELLE,
+                request.motif(), TypeMvtStk.CORRECTION_NEG);
     }
 
-    private MvtStkResponse enregistrerMouvement(MvtStkRequest request, TypeMvtStk typeMvt) {
-        ArticleResponse article = articleService.getById(request.articleId());
+    private MvtStkResponse enregistrerMouvement(Long articleId, BigDecimal quantite, SourceMvtStk sourceMvt,
+                                                  String motif, TypeMvtStk typeMvt) {
+        ArticleResponse article = articleService.getById(articleId);
         Long idEntreprise = currentUserService.getCurrentEntrepriseId();
 
         if (typeMvt == TypeMvtStk.SORTIE || typeMvt == TypeMvtStk.CORRECTION_NEG) {
             BigDecimal stockActuel = calculerStockReel(article.id(), idEntreprise);
-            if (stockActuel.compareTo(request.quantite()) < 0) {
+            if (stockActuel.compareTo(quantite) < 0) {
                 throw new StockInsuffisantException(
                         "Stock insuffisant pour l'article '%s' : stock actuel %s, quantité demandée %s"
-                                .formatted(article.designation(), stockActuel, request.quantite()));
+                                .formatted(article.designation(), stockActuel, quantite));
             }
         }
 
-        MvtStk mvtStk = mvtStkMapper.toEntity(request);
-        mvtStk.setDateMvt(Instant.now());
-        mvtStk.setTypeMvt(typeMvt);
-        mvtStk.setArticle(entityManager.getReference(Article.class, article.id()));
-        mvtStk.setIdEntreprise(idEntreprise);
+        MvtStk mvtStk = MvtStk.builder()
+                .dateMvt(Instant.now())
+                .quantite(quantite)
+                .article(entityManager.getReference(Article.class, article.id()))
+                .typeMvt(typeMvt)
+                .sourceMvt(sourceMvt)
+                .motif(motif)
+                .idEntreprise(idEntreprise)
+                .build();
 
         return mvtStkMapper.toResponse(mvtStkRepository.save(mvtStk));
     }

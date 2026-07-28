@@ -16,5 +16,7 @@ interface CommandeFournisseurRepository extends JpaRepository<CommandeFournisseu
 
     List<CommandeFournisseur> findAllByEntrepriseId(Long entrepriseId);
 
+    List<CommandeFournisseur> findAllByFournisseurIdAndEntrepriseIdOrderByDateCommandeDesc(Long fournisseurId, Long entrepriseId);
+
     long countByCodeCommandeStartingWithAndEntrepriseId(String prefix, Long entrepriseId);
 }

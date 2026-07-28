@@ -14,6 +14,8 @@ public interface CommandeClientService {
 
     List<CommandeClientResponse> getAll();
 
+    List<CommandeClientResponse> getHistoriqueByClient(Long idClient);
+
     CommandeClientResponse update(Long id, CommandeClientRequest request);
 
     void delete(Long id);

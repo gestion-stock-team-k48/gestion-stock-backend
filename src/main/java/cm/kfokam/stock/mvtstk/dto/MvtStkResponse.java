@@ -14,6 +14,7 @@ public record MvtStkResponse(
         String articleDesignation,
         TypeMvtStk typeMvt,
         SourceMvtStk sourceMvt,
+        String motif,
         Long idEntreprise
 ) {
 }

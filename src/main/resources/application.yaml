@@ -30,6 +30,19 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+  # ── Configuration Email (SMTP) ─────────────────
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: gestion.stock.notif@gmail.com
+    password: changeme
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 # ── Configuration MinIO ─────────────────────────
 minio:
   url: http://localhost:9005
@@ -45,6 +58,9 @@ application:
       expiration: 86400000 # 1 jour en millisecondes
       refresh-token:
         expiration: 604800000 # 7 jours en millisecondes
+  mail:
+    from: gestion.stock.notif@gmail.com
+    from-name: Gestion Stock
 
 # ── Configuration Swagger / OpenAPI ─────────────
 springdoc:

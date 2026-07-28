@@ -7,6 +7,7 @@ import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.exception.StockInsuffisantException;
 import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
+import cm.kfokam.stock.mvtstk.dto.MvtStkCorrectionRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkResponse;
 import cm.kfokam.stock.mvtstk.model.MvtStk;
@@ -59,6 +60,7 @@ class MvtStkServiceImplTest {
     private Article article;
     private ArticleResponse articleResponse;
     private MvtStkRequest request;
+    private MvtStkCorrectionRequest correctionRequest;
     private MvtStkResponse response;
 
     @BeforeEach
@@ -71,9 +73,14 @@ class MvtStkServiceImplTest {
                 null, new BigDecimal("5"), 1L, "Informatique");
 
         request = new MvtStkRequest(1L, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR);
+        correctionRequest = new MvtStkCorrectionRequest(1L, new BigDecimal("5"), "Casse en entrepôt");
 
         response = new MvtStkResponse(1L, Instant.now(), new BigDecimal("5"), 1L, "Ordinateur portable",
-                TypeMvtStk.ENTREE, SourceMvtStk.COMMANDE_FOURNISSEUR, 1L);
+                TypeMvtStk.ENTREE, SourceMvtStk.COMMANDE_FOURNISSEUR, null, 1L);
+
+        lenient().when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
+        lenient().when(mvtStkRepository.save(any(MvtStk.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(mvtStkMapper.toResponse(any(MvtStk.class))).thenReturn(response);
     }
 
     private MvtStk mouvement(TypeMvtStk type, String quantite) {
@@ -151,15 +158,15 @@ class MvtStkServiceImplTest {
     @Test
     void entreeStock_shouldCreateMovement_withTypeEntree() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkMapper.toEntity(request)).thenReturn(new MvtStk());
-        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
-        when(mvtStkRepository.save(any(MvtStk.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(mvtStkMapper.toResponse(any(MvtStk.class))).thenReturn(response);
 
         MvtStkResponse result = mvtStkService.entreeStock(request);
 
         assertThat(result).isEqualTo(response);
-        verify(mvtStkRepository).save(argThat(mvt -> mvt.getTypeMvt() == TypeMvtStk.ENTREE));
+        verify(mvtStkRepository).save(argThat(mvt ->
+                mvt.getTypeMvt() == TypeMvtStk.ENTREE
+                        && mvt.getSourceMvt() == SourceMvtStk.COMMANDE_FOURNISSEUR
+                        && mvt.getMotif() == null
+        ));
     }
 
     @Test
@@ -177,10 +184,6 @@ class MvtStkServiceImplTest {
         when(articleService.getById(1L)).thenReturn(articleResponse);
         when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
                 .thenReturn(List.of(mouvement(TypeMvtStk.ENTREE, "10")));
-        when(mvtStkMapper.toEntity(request)).thenReturn(new MvtStk());
-        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
-        when(mvtStkRepository.save(any(MvtStk.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(mvtStkMapper.toResponse(any(MvtStk.class))).thenReturn(response);
 
         mvtStkService.sortieStock(request);
 
@@ -201,31 +204,31 @@ class MvtStkServiceImplTest {
     }
 
     @Test
-    void correctionStockPos_shouldCreateMovement_withTypeCorrectionPos() {
+    void correctionStockPos_shouldCreateMovement_withTypeCorrectionPosAndMotif() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkMapper.toEntity(request)).thenReturn(new MvtStk());
-        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
-        when(mvtStkRepository.save(any(MvtStk.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(mvtStkMapper.toResponse(any(MvtStk.class))).thenReturn(response);
 
-        mvtStkService.correctionStockPos(request);
+        mvtStkService.correctionStockPos(correctionRequest);
 
-        verify(mvtStkRepository).save(argThat(mvt -> mvt.getTypeMvt() == TypeMvtStk.CORRECTION_POS));
+        verify(mvtStkRepository).save(argThat(mvt ->
+                mvt.getTypeMvt() == TypeMvtStk.CORRECTION_POS
+                        && mvt.getSourceMvt() == SourceMvtStk.CORRECTION_MANUELLE
+                        && "Casse en entrepôt".equals(mvt.getMotif())
+        ));
     }
 
     @Test
-    void correctionStockNeg_shouldCreateMovement_withTypeCorrectionNeg() {
+    void correctionStockNeg_shouldCreateMovement_withTypeCorrectionNegAndMotif() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
         when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
                 .thenReturn(List.of(mouvement(TypeMvtStk.ENTREE, "10")));
-        when(mvtStkMapper.toEntity(request)).thenReturn(new MvtStk());
-        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
-        when(mvtStkRepository.save(any(MvtStk.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(mvtStkMapper.toResponse(any(MvtStk.class))).thenReturn(response);
 
-        mvtStkService.correctionStockNeg(request);
+        mvtStkService.correctionStockNeg(correctionRequest);
 
-        verify(mvtStkRepository).save(argThat(mvt -> mvt.getTypeMvt() == TypeMvtStk.CORRECTION_NEG));
+        verify(mvtStkRepository).save(argThat(mvt ->
+                mvt.getTypeMvt() == TypeMvtStk.CORRECTION_NEG
+                        && mvt.getSourceMvt() == SourceMvtStk.CORRECTION_MANUELLE
+                        && "Casse en entrepôt".equals(mvt.getMotif())
+        ));
     }
 
     @Test
@@ -234,7 +237,7 @@ class MvtStkServiceImplTest {
         when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
                 .thenReturn(List.of());
 
-        assertThatThrownBy(() -> mvtStkService.correctionStockNeg(request))
+        assertThatThrownBy(() -> mvtStkService.correctionStockNeg(correctionRequest))
                 .isInstanceOf(StockInsuffisantException.class);
 
         verify(mvtStkRepository, never()).save(any());
