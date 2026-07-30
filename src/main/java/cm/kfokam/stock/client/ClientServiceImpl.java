@@ -7,10 +7,12 @@ import cm.kfokam.stock.client.model.Client;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,10 +21,13 @@ import java.util.List;
 @Transactional
 class ClientServiceImpl implements ClientService {
 
+    private static final String PHOTO_FOLDER = "clients";
+
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
     private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
+    private final FileStorageService fileStorageService;
 
     @Override
     public ClientResponse create(ClientRequest request) {
@@ -64,9 +69,29 @@ class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    public ClientResponse uploadPhoto(Long id, MultipartFile file) {
+        Client client = findClientOrThrow(id);
+        String previousPhoto = client.getPhoto();
+
+        String objectName = fileStorageService.uploadFile(file, PHOTO_FOLDER);
+        client.setPhoto(objectName);
+        Client saved = clientRepository.save(client);
+
+        if (previousPhoto != null) {
+            fileStorageService.deleteFile(previousPhoto);
+        }
+
+        return clientMapper.toResponse(saved);
+    }
+
+    @Override
     public void delete(Long id) {
         Client client = findClientOrThrow(id);
+        String photo = client.getPhoto();
         clientRepository.delete(client);
+        if (photo != null) {
+            fileStorageService.deleteFile(photo);
+        }
     }
 
     private Client findClientOrThrow(Long id) {
