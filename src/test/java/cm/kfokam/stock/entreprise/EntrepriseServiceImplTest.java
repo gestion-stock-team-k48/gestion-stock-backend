@@ -2,7 +2,7 @@ package cm.kfokam.stock.entreprise;
 
 import cm.kfokam.stock.entreprise.dto.EntrepriseRequest;
 import cm.kfokam.stock.entreprise.dto.EntrepriseResponse;
-import cm.kfokam.stock.entreprise.model.Adresse;
+import cm.kfokam.stock.common.entity.Adresse;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;

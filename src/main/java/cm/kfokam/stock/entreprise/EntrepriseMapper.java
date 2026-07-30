@@ -12,13 +12,13 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 interface EntrepriseMapper {
 
-    @Mapping(target = "adresse.rue", source = "rue")
+    @Mapping(target = "adresse.adresse1", source = "rue")
     @Mapping(target = "adresse.ville", source = "ville")
     @Mapping(target = "adresse.codePostal", source = "codePostal")
     @Mapping(target = "adresse.pays", source = "pays")
     Entreprise toEntity(EntrepriseRequest request);
 
-    @Mapping(target = "rue", source = "adresse.rue")
+    @Mapping(target = "rue", source = "adresse.adresse1")
     @Mapping(target = "ville", source = "adresse.ville")
     @Mapping(target = "codePostal", source = "adresse.codePostal")
     @Mapping(target = "pays", source = "adresse.pays")
@@ -26,7 +26,7 @@ interface EntrepriseMapper {
 
     List<EntrepriseResponse> toResponseList(List<Entreprise> entreprises);
 
-    @Mapping(target = "adresse.rue", source = "rue")
+    @Mapping(target = "adresse.adresse1", source = "rue")
     @Mapping(target = "adresse.ville", source = "ville")
     @Mapping(target = "adresse.codePostal", source = "codePostal")
     @Mapping(target = "adresse.pays", source = "pays")

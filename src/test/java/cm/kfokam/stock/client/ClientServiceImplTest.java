@@ -4,7 +4,7 @@ import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.client.dto.ClientRequest;
 import cm.kfokam.stock.client.dto.ClientResponse;
 import cm.kfokam.stock.client.model.Client;
-import cm.kfokam.stock.entreprise.model.Adresse;
+import cm.kfokam.stock.common.entity.Adresse;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import jakarta.persistence.EntityManager;
