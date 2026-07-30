@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -203,4 +205,27 @@ class ClientControllerTest {
         mockMvc.perform(delete("/api/clients/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void uploadPhoto_shouldReturn200_whenValidFile() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "test".getBytes());
+
+        when(clientService.uploadPhoto(eq(1L), any())).thenReturn(sampleResponse());
+
+        mockMvc.perform(multipart("/api/clients/{id}/photo", 1L).file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
+    }
+
+    @Test
+    void uploadPhoto_shouldReturn404_whenClientNotFound() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "test".getBytes());
+
+        when(clientService.uploadPhoto(eq(99L), any()))
+                .thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"));
+
+        mockMvc.perform(multipart("/api/clients/{id}/photo", 99L).file(file))
+                .andExpect(status().isNotFound());
+    }
+
 }

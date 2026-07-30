@@ -7,6 +7,7 @@ import cm.kfokam.stock.client.model.Client;
 import cm.kfokam.stock.common.entity.Adresse;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +46,9 @@ class ClientServiceImplTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private ClientServiceImpl clientService;
@@ -204,12 +210,53 @@ class ClientServiceImplTest {
     }
 
     @Test
+    void uploadPhoto_shouldReplacePhoto_andDeleteOldOne() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "content".getBytes());
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
+        when(fileStorageService.uploadFile(file, "clients")).thenReturn("clients/new-uuid.png");
+        when(clientRepository.save(client)).thenReturn(client);
+        when(clientMapper.toResponse(client)).thenReturn(response);
+
+        ClientResponse result = clientService.uploadPhoto(1L, file);
+
+        assertThat(result).isEqualTo(response);
+        assertThat(client.getPhoto()).isEqualTo("clients/new-uuid.png");
+        verify(fileStorageService).deleteFile("photo.png");
+    }
+
+    @Test
+    void uploadPhoto_shouldNotDeleteOldPhoto_whenClientHadNone() {
+        client.setPhoto(null);
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "content".getBytes());
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
+        when(fileStorageService.uploadFile(file, "clients")).thenReturn("clients/new-uuid.png");
+        when(clientRepository.save(client)).thenReturn(client);
+        when(clientMapper.toResponse(client)).thenReturn(response);
+
+        clientService.uploadPhoto(1L, file);
+
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
+    void uploadPhoto_shouldThrowEntityNotFoundException_whenClientNotFound() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "content".getBytes());
+        when(clientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> clientService.uploadPhoto(99L, file))
+                .isInstanceOf(EntityNotFoundException.class);
+
+        verify(fileStorageService, never()).uploadFile(any(), any());
+    }
+
+    @Test
     void delete_shouldDeleteClient_whenFound() {
         when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
 
         clientService.delete(1L);
 
         verify(clientRepository, times(1)).delete(client);
+        verify(fileStorageService).deleteFile("photo.png");
     }
 
     @Test
