@@ -1,5 +1,6 @@
 package cm.kfokam.stock.commandefournisseur.model;
 
+import cm.kfokam.stock.common.entity.AbstractEntity;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.fournisseur.model.Fournisseur;
 import jakarta.persistence.CascadeType;
@@ -21,6 +22,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,8 +35,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class CommandeFournisseur {
+@SuperBuilder
+public class CommandeFournisseur extends AbstractEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
