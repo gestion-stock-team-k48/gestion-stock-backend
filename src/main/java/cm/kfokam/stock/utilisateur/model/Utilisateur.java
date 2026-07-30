@@ -1,7 +1,7 @@
 package cm.kfokam.stock.utilisateur.model;
 
 import cm.kfokam.stock.common.entity.AbstractEntity;
-import cm.kfokam.stock.entreprise.model.Adresse;
+import cm.kfokam.stock.common.entity.Adresse;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

@@ -1,7 +1,7 @@
 package cm.kfokam.stock.fournisseur;
 
 import cm.kfokam.stock.auth.CurrentUserService;
-import cm.kfokam.stock.entreprise.model.Adresse;
+import cm.kfokam.stock.common.entity.Adresse;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.fournisseur.dto.FournisseurRequest;
