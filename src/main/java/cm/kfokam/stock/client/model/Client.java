@@ -1,5 +1,6 @@
 package cm.kfokam.stock.client.model;
 
+import cm.kfokam.stock.common.entity.AbstractEntity;
 import cm.kfokam.stock.entreprise.model.Adresse;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import jakarta.persistence.Column;
@@ -14,10 +15,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "clients", uniqueConstraints = @UniqueConstraint(columnNames = {"email", "entreprise_id"}))
@@ -25,8 +26,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Client {
+@SuperBuilder
+public class Client extends AbstractEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

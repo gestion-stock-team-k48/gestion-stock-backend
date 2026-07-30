@@ -22,8 +22,12 @@
 		<java.version>21</java.version>
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
 		<jjwt.version>0.12.3</jjwt.version>
-		<springdoc.version>2.3.0</springdoc.version>
+		<springdoc.version>2.5.0</springdoc.version>
 		<minio.version>8.5.7</minio.version>
+		<!-- Spring Boot 3.2.5 manages Flyway 9.22.3, which predates the
+		     flyway-database-postgresql module (split out of flyway-core in 10.0.0).
+		     Override to 10.20.1 so both artifacts resolve to a matching version. -->
+		<flyway.version>10.20.1</flyway.version>
 	</properties>
 
 	<dependencies>
@@ -65,6 +69,17 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+
+		<!-- ── Flyway (versionnement de la base de données) ── -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+			<version>${flyway.version}</version>
 		</dependency>
 		<!-- ── Stockage d'objets (MinIO / S3) ────────────── -->
 		<dependency>

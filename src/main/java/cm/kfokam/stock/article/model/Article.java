@@ -1,6 +1,7 @@
 package cm.kfokam.stock.article.model;
 
 import cm.kfokam.stock.category.model.Category;
+import cm.kfokam.stock.common.entity.AbstractEntity;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,10 +14,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
@@ -26,8 +27,8 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Article {
+@SuperBuilder
+public class Article extends AbstractEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

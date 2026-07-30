@@ -1,5 +1,6 @@
 package cm.kfokam.stock.category.model;
 
+import cm.kfokam.stock.common.entity.AbstractEntity;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,10 +13,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "categories", uniqueConstraints = @UniqueConstraint(columnNames = {"code", "entreprise_id"}))
@@ -23,8 +24,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Category {
+@SuperBuilder
+public class Category extends AbstractEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
