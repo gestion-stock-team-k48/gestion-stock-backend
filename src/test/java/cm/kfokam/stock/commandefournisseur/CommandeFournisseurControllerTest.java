@@ -77,7 +77,7 @@ class CommandeFournisseurControllerTest {
 
         when(commandeFournisseurService.create(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/commandes-fournisseur")
+        mockMvc.perform(post("/commandes-fournisseur")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -94,7 +94,7 @@ class CommandeFournisseurControllerTest {
                 List.of(new LigneCommandeFournisseurRequest(1L, 2))
         );
 
-        mockMvc.perform(post("/api/commandes-fournisseur")
+        mockMvc.perform(post("/commandes-fournisseur")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -108,7 +108,7 @@ class CommandeFournisseurControllerTest {
                 null, LocalDate.of(2026, 7, 27), 1L, List.of()
         );
 
-        mockMvc.perform(post("/api/commandes-fournisseur")
+        mockMvc.perform(post("/commandes-fournisseur")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -123,7 +123,7 @@ class CommandeFournisseurControllerTest {
         when(commandeFournisseurService.create(request))
                 .thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 1"));
 
-        mockMvc.perform(post("/api/commandes-fournisseur")
+        mockMvc.perform(post("/commandes-fournisseur")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -136,7 +136,7 @@ class CommandeFournisseurControllerTest {
         when(commandeFournisseurService.create(request))
                 .thenThrow(new DuplicateCodeException("Le code 'CF-2026-0001' est déjà utilisé"));
 
-        mockMvc.perform(post("/api/commandes-fournisseur")
+        mockMvc.perform(post("/commandes-fournisseur")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -146,7 +146,7 @@ class CommandeFournisseurControllerTest {
     void getById_shouldReturn200_whenFound() throws Exception {
         when(commandeFournisseurService.getById(1L)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/commandes-fournisseur/{id}", 1L))
+        mockMvc.perform(get("/commandes-fournisseur/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.codeCommande").value("CF-2026-0001"));
@@ -157,7 +157,7 @@ class CommandeFournisseurControllerTest {
         when(commandeFournisseurService.getById(99L))
                 .thenThrow(new EntityNotFoundException("Commande fournisseur introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/commandes-fournisseur/{id}", 99L))
+        mockMvc.perform(get("/commandes-fournisseur/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -166,7 +166,7 @@ class CommandeFournisseurControllerTest {
         List<CommandeFournisseurResponse> responses = List.of(sampleResponse());
         when(commandeFournisseurService.getAll()).thenReturn(responses);
 
-        mockMvc.perform(get("/api/commandes-fournisseur"))
+        mockMvc.perform(get("/commandes-fournisseur"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].codeCommande").value("CF-2026-0001"));
@@ -177,7 +177,7 @@ class CommandeFournisseurControllerTest {
         List<CommandeFournisseurResponse> responses = List.of(sampleResponse());
         when(commandeFournisseurService.getHistoriqueByFournisseur(1L)).thenReturn(responses);
 
-        mockMvc.perform(get("/api/commandes-fournisseur/fournisseur/{idFournisseur}", 1L))
+        mockMvc.perform(get("/commandes-fournisseur/fournisseur/{idFournisseur}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].idFournisseur").value(1L));
@@ -188,7 +188,7 @@ class CommandeFournisseurControllerTest {
         when(commandeFournisseurService.getHistoriqueByFournisseur(99L))
                 .thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/commandes-fournisseur/fournisseur/{idFournisseur}", 99L))
+        mockMvc.perform(get("/commandes-fournisseur/fournisseur/{idFournisseur}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -199,7 +199,7 @@ class CommandeFournisseurControllerTest {
 
         when(commandeFournisseurService.update(eq(1L), any(CommandeFournisseurRequest.class))).thenReturn(response);
 
-        mockMvc.perform(put("/api/commandes-fournisseur/{id}", 1L)
+        mockMvc.perform(put("/commandes-fournisseur/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -213,7 +213,7 @@ class CommandeFournisseurControllerTest {
         when(commandeFournisseurService.update(eq(99L), any(CommandeFournisseurRequest.class)))
                 .thenThrow(new EntityNotFoundException("Commande fournisseur introuvable avec l'id : 99"));
 
-        mockMvc.perform(put("/api/commandes-fournisseur/{id}", 99L)
+        mockMvc.perform(put("/commandes-fournisseur/{id}", 99L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -221,7 +221,7 @@ class CommandeFournisseurControllerTest {
 
     @Test
     void delete_shouldReturn204_whenFound() throws Exception {
-        mockMvc.perform(delete("/api/commandes-fournisseur/{id}", 1L))
+        mockMvc.perform(delete("/commandes-fournisseur/{id}", 1L))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -233,7 +233,7 @@ class CommandeFournisseurControllerTest {
         org.mockito.Mockito.doThrow(new EntityNotFoundException("Commande fournisseur introuvable avec l'id : 99"))
                 .when(commandeFournisseurService).delete(99L);
 
-        mockMvc.perform(delete("/api/commandes-fournisseur/{id}", 99L))
+        mockMvc.perform(delete("/commandes-fournisseur/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -244,7 +244,7 @@ class CommandeFournisseurControllerTest {
 
         when(commandeFournisseurService.updateEtatCommande(1L, EtatCommande.VALIDEE)).thenReturn(response);
 
-        mockMvc.perform(patch("/api/commandes-fournisseur/{id}/etat", 1L)
+        mockMvc.perform(patch("/commandes-fournisseur/{id}/etat", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(etatRequest)))
                 .andExpect(status().isOk())
@@ -253,7 +253,7 @@ class CommandeFournisseurControllerTest {
 
     @Test
     void updateEtat_shouldReturn400_whenEtatIsMissing() throws Exception {
-        mockMvc.perform(patch("/api/commandes-fournisseur/{id}/etat", 1L)
+        mockMvc.perform(patch("/commandes-fournisseur/{id}/etat", 1L)
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -268,7 +268,7 @@ class CommandeFournisseurControllerTest {
         when(commandeFournisseurService.updateEtatCommande(1L, EtatCommande.LIVREE))
                 .thenThrow(new InvalidStateTransitionException("Transition invalide de 'EN_PREPARATION' vers 'LIVREE'"));
 
-        mockMvc.perform(patch("/api/commandes-fournisseur/{id}/etat", 1L)
+        mockMvc.perform(patch("/commandes-fournisseur/{id}/etat", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(etatRequest)))
                 .andExpect(status().isConflict());

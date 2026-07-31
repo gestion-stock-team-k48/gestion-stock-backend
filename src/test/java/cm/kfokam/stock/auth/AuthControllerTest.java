@@ -43,7 +43,7 @@ class AuthControllerTest {
 
         when(authService.authenticate(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/auth/authenticate")
+        mockMvc.perform(post("/auth/authenticate")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -55,7 +55,7 @@ class AuthControllerTest {
     void authenticate_shouldReturn400_whenEmailIsBlank() throws Exception {
         AuthenticationRequest invalidRequest = new AuthenticationRequest("", "P@ssw0rd!");
 
-        mockMvc.perform(post("/api/auth/authenticate")
+        mockMvc.perform(post("/auth/authenticate")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -67,7 +67,7 @@ class AuthControllerTest {
 
         when(authService.authenticate(request)).thenThrow(new BadCredentialsException("Bad credentials"));
 
-        mockMvc.perform(post("/api/auth/authenticate")
+        mockMvc.perform(post("/auth/authenticate")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -78,7 +78,7 @@ class AuthControllerTest {
         AuthenticationResponse response = new AuthenticationResponse("new-access-token", "refresh-token");
         when(authService.refreshToken(any(HttpServletRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/auth/refresh-token")
+        mockMvc.perform(post("/auth/refresh-token")
                         .header("Authorization", "Bearer refresh-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("new-access-token"));
@@ -89,7 +89,7 @@ class AuthControllerTest {
         when(authService.refreshToken(any(HttpServletRequest.class)))
                 .thenThrow(new InvalidTokenException("Refresh token invalide ou expiré"));
 
-        mockMvc.perform(post("/api/auth/refresh-token")
+        mockMvc.perform(post("/auth/refresh-token")
                         .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
     }
@@ -109,7 +109,7 @@ class AuthControllerTest {
 
         when(authService.register(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -124,7 +124,7 @@ class AuthControllerTest {
         when(authService.register(request))
                 .thenThrow(new DuplicateCodeException("Le code fiscal 'CF-001' est déjà utilisé"));
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());

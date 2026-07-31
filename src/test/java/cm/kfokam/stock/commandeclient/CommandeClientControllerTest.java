@@ -77,7 +77,7 @@ class CommandeClientControllerTest {
 
         when(commandeClientService.create(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/commandes-client")
+        mockMvc.perform(post("/commandes-client")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -94,7 +94,7 @@ class CommandeClientControllerTest {
                 List.of(new LigneCommandeClientRequest(1L, 2))
         );
 
-        mockMvc.perform(post("/api/commandes-client")
+        mockMvc.perform(post("/commandes-client")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -108,7 +108,7 @@ class CommandeClientControllerTest {
                 null, LocalDate.of(2026, 7, 27), 1L, List.of()
         );
 
-        mockMvc.perform(post("/api/commandes-client")
+        mockMvc.perform(post("/commandes-client")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -123,7 +123,7 @@ class CommandeClientControllerTest {
         when(commandeClientService.create(request))
                 .thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 1"));
 
-        mockMvc.perform(post("/api/commandes-client")
+        mockMvc.perform(post("/commandes-client")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -136,7 +136,7 @@ class CommandeClientControllerTest {
         when(commandeClientService.create(request))
                 .thenThrow(new DuplicateCodeException("Le code 'CC-2026-0001' est déjà utilisé"));
 
-        mockMvc.perform(post("/api/commandes-client")
+        mockMvc.perform(post("/commandes-client")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -146,7 +146,7 @@ class CommandeClientControllerTest {
     void getById_shouldReturn200_whenFound() throws Exception {
         when(commandeClientService.getById(1L)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/commandes-client/{id}", 1L))
+        mockMvc.perform(get("/commandes-client/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.codeCommande").value("CC-2026-0001"));
@@ -157,7 +157,7 @@ class CommandeClientControllerTest {
         when(commandeClientService.getById(99L))
                 .thenThrow(new EntityNotFoundException("Commande client introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/commandes-client/{id}", 99L))
+        mockMvc.perform(get("/commandes-client/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -166,7 +166,7 @@ class CommandeClientControllerTest {
         List<CommandeClientResponse> responses = List.of(sampleResponse());
         when(commandeClientService.getAll()).thenReturn(responses);
 
-        mockMvc.perform(get("/api/commandes-client"))
+        mockMvc.perform(get("/commandes-client"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].codeCommande").value("CC-2026-0001"));
@@ -177,7 +177,7 @@ class CommandeClientControllerTest {
         List<CommandeClientResponse> responses = List.of(sampleResponse());
         when(commandeClientService.getHistoriqueByClient(1L)).thenReturn(responses);
 
-        mockMvc.perform(get("/api/commandes-client/client/{idClient}", 1L))
+        mockMvc.perform(get("/commandes-client/client/{idClient}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].idClient").value(1L));
@@ -188,7 +188,7 @@ class CommandeClientControllerTest {
         when(commandeClientService.getHistoriqueByClient(99L))
                 .thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/commandes-client/client/{idClient}", 99L))
+        mockMvc.perform(get("/commandes-client/client/{idClient}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -199,7 +199,7 @@ class CommandeClientControllerTest {
 
         when(commandeClientService.update(eq(1L), any(CommandeClientRequest.class))).thenReturn(response);
 
-        mockMvc.perform(put("/api/commandes-client/{id}", 1L)
+        mockMvc.perform(put("/commandes-client/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -213,7 +213,7 @@ class CommandeClientControllerTest {
         when(commandeClientService.update(eq(99L), any(CommandeClientRequest.class)))
                 .thenThrow(new EntityNotFoundException("Commande client introuvable avec l'id : 99"));
 
-        mockMvc.perform(put("/api/commandes-client/{id}", 99L)
+        mockMvc.perform(put("/commandes-client/{id}", 99L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -221,7 +221,7 @@ class CommandeClientControllerTest {
 
     @Test
     void delete_shouldReturn204_whenFound() throws Exception {
-        mockMvc.perform(delete("/api/commandes-client/{id}", 1L))
+        mockMvc.perform(delete("/commandes-client/{id}", 1L))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -233,7 +233,7 @@ class CommandeClientControllerTest {
         org.mockito.Mockito.doThrow(new EntityNotFoundException("Commande client introuvable avec l'id : 99"))
                 .when(commandeClientService).delete(99L);
 
-        mockMvc.perform(delete("/api/commandes-client/{id}", 99L))
+        mockMvc.perform(delete("/commandes-client/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -244,7 +244,7 @@ class CommandeClientControllerTest {
 
         when(commandeClientService.updateEtatCommande(1L, EtatCommande.VALIDEE)).thenReturn(response);
 
-        mockMvc.perform(patch("/api/commandes-client/{id}/etat", 1L)
+        mockMvc.perform(patch("/commandes-client/{id}/etat", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(etatRequest)))
                 .andExpect(status().isOk())
@@ -253,7 +253,7 @@ class CommandeClientControllerTest {
 
     @Test
     void updateEtat_shouldReturn400_whenEtatIsMissing() throws Exception {
-        mockMvc.perform(patch("/api/commandes-client/{id}/etat", 1L)
+        mockMvc.perform(patch("/commandes-client/{id}/etat", 1L)
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -268,7 +268,7 @@ class CommandeClientControllerTest {
         when(commandeClientService.updateEtatCommande(1L, EtatCommande.LIVREE))
                 .thenThrow(new InvalidStateTransitionException("Transition invalide de 'EN_PREPARATION' vers 'LIVREE'"));
 
-        mockMvc.perform(patch("/api/commandes-client/{id}/etat", 1L)
+        mockMvc.perform(patch("/commandes-client/{id}/etat", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(etatRequest)))
                 .andExpect(status().isConflict());

@@ -63,7 +63,7 @@ class ClientControllerTest {
 
         when(clientService.create(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/clients")
+        mockMvc.perform(post("/clients")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -78,7 +78,7 @@ class ClientControllerTest {
                 null, "Douala", null, "Cameroun", "photo.png"
         );
 
-        mockMvc.perform(post("/api/clients")
+        mockMvc.perform(post("/clients")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -93,7 +93,7 @@ class ClientControllerTest {
                 null, "Douala", null, "Cameroun", "photo.png"
         );
 
-        mockMvc.perform(post("/api/clients")
+        mockMvc.perform(post("/clients")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -108,7 +108,7 @@ class ClientControllerTest {
         when(clientService.create(request))
                 .thenThrow(new DuplicateEmailException("L'email 'ange@example.com' est déjà utilisé"));
 
-        mockMvc.perform(post("/api/clients")
+        mockMvc.perform(post("/clients")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -118,7 +118,7 @@ class ClientControllerTest {
     void getById_shouldReturn200_whenFound() throws Exception {
         when(clientService.getById(1L)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/clients/{id}", 1L))
+        mockMvc.perform(get("/clients/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
@@ -128,7 +128,7 @@ class ClientControllerTest {
         when(clientService.getById(99L))
                 .thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/clients/{id}", 99L))
+        mockMvc.perform(get("/clients/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -141,7 +141,7 @@ class ClientControllerTest {
         );
         when(clientService.getAll()).thenReturn(responses);
 
-        mockMvc.perform(get("/api/clients"))
+        mockMvc.perform(get("/clients"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].email").value("ange@example.com"))
@@ -155,7 +155,7 @@ class ClientControllerTest {
 
         when(clientService.update(eq(1L), any(ClientRequest.class))).thenReturn(response);
 
-        mockMvc.perform(put("/api/clients/{id}", 1L)
+        mockMvc.perform(put("/clients/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -169,7 +169,7 @@ class ClientControllerTest {
         when(clientService.update(eq(99L), any(ClientRequest.class)))
                 .thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"));
 
-        mockMvc.perform(put("/api/clients/{id}", 99L)
+        mockMvc.perform(put("/clients/{id}", 99L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -182,7 +182,7 @@ class ClientControllerTest {
         when(clientService.update(eq(1L), any(ClientRequest.class)))
                 .thenThrow(new DuplicateEmailException("L'email 'ange@example.com' est déjà utilisé"));
 
-        mockMvc.perform(put("/api/clients/{id}", 1L)
+        mockMvc.perform(put("/clients/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -190,7 +190,7 @@ class ClientControllerTest {
 
     @Test
     void delete_shouldReturn204_whenFound() throws Exception {
-        mockMvc.perform(delete("/api/clients/{id}", 1L))
+        mockMvc.perform(delete("/clients/{id}", 1L))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -202,7 +202,7 @@ class ClientControllerTest {
         org.mockito.Mockito.doThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"))
                 .when(clientService).delete(99L);
 
-        mockMvc.perform(delete("/api/clients/{id}", 99L))
+        mockMvc.perform(delete("/clients/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -212,7 +212,7 @@ class ClientControllerTest {
 
         when(clientService.uploadPhoto(eq(1L), any())).thenReturn(sampleResponse());
 
-        mockMvc.perform(multipart("/api/clients/{id}/photo", 1L).file(file))
+        mockMvc.perform(multipart("/clients/{id}/photo", 1L).file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
@@ -224,7 +224,7 @@ class ClientControllerTest {
         when(clientService.uploadPhoto(eq(99L), any()))
                 .thenThrow(new EntityNotFoundException("Client introuvable avec l'id : 99"));
 
-        mockMvc.perform(multipart("/api/clients/{id}/photo", 99L).file(file))
+        mockMvc.perform(multipart("/clients/{id}/photo", 99L).file(file))
                 .andExpect(status().isNotFound());
     }
 

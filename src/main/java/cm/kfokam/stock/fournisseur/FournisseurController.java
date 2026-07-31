@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/fournisseurs")
+@RequestMapping("/fournisseurs")
 @RequiredArgsConstructor
 @Tag(name = "Fournisseurs", description = "Gestion des fournisseurs")
 public class FournisseurController {

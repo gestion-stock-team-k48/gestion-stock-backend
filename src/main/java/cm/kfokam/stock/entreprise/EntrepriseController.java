@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 // Creation happens exclusively via POST /api/auth/register (tenant self-registration).
 // No cross-tenant getAll()/delete() here — there is no platform "super-admin" role to gate them behind.
 @RestController
-@RequestMapping("/api/entreprises")
+@RequestMapping("/entreprises")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Entreprise", description = "Gestion des informations de l'entreprise courante (tenant)")

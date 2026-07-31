@@ -40,7 +40,7 @@ class DashboardControllerTest {
         );
         when(dashboardService.getStatistiques()).thenReturn(stats);
 
-        mockMvc.perform(get("/api/dashboard/statistiques"))
+        mockMvc.perform(get("/dashboard/statistiques"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.chiffreAffairesTotal").value(560.00))
                 .andExpect(jsonPath("$.chiffreAffairesMoisCourant").value(360.00))
