@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,7 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -87,6 +90,23 @@ public class FournisseurController {
             @Parameter(description = "Identifiant du fournisseur", example = "1") @PathVariable Long id,
             @Valid @RequestBody FournisseurRequest request) {
         return ResponseEntity.ok(fournisseurService.update(id, request));
+    }
+
+    @Operation(summary = "Uploader la photo d'un fournisseur", description = "Enregistre la photo d'un fournisseur dans le bucket MinIO")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Photo mise à jour"),
+            @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant"),
+            @ApiResponse(responseCode = "401", description = "Non authentifié"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
+            @ApiResponse(responseCode = "404", description = "Fournisseur introuvable"),
+            @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FournisseurResponse> uploadPhoto(
+            @Parameter(description = "Identifiant du fournisseur", example = "1") @PathVariable Long id,
+            @Parameter(description = "Fichier image à uploader") @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(fournisseurService.uploadPhoto(id, file));
     }
 
     @Operation(summary = "Supprimer un fournisseur", description = "Supprime définitivement un fournisseur")
