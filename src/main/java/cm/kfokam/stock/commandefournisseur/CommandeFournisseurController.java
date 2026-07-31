@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/commandes-fournisseur")
+@RequestMapping("/commandes-fournisseur")
 @RequiredArgsConstructor
 @Tag(name = "Commandes Fournisseur", description = "Gestion des commandes passées aux fournisseurs")
 public class CommandeFournisseurController {

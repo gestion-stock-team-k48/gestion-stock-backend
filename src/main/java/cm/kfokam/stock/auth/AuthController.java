@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 // Endpoints publics (voir SecurityConfig.WHITE_LIST_URLS) : pas de @PreAuthorize ici,
 // ils doivent rester accessibles sans authentification préalable.
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentification", description = "Connexion, rafraîchissement de session et inscription des entreprises")
 public class AuthController {

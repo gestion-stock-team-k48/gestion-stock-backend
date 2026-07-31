@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/mouvements-stock")
+@RequestMapping("/mouvements-stock")
 @RequiredArgsConstructor
 @Tag(name = "Mouvements de stock", description = "Gestion des entrées, sorties, corrections et alertes de stock")
 public class MvtStkController {

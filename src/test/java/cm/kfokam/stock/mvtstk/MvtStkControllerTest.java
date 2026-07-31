@@ -62,7 +62,7 @@ class MvtStkControllerTest {
 
         when(mvtStkService.entreeStock(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/mouvements-stock/entree")
+        mockMvc.perform(post("/mouvements-stock/entree")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -75,7 +75,7 @@ class MvtStkControllerTest {
     void entreeStock_shouldReturn400_whenQuantiteIsNotPositive() throws Exception {
         MvtStkRequest invalidRequest = new MvtStkRequest(1L, new BigDecimal("-1"), SourceMvtStk.COMMANDE_FOURNISSEUR);
 
-        mockMvc.perform(post("/api/mouvements-stock/entree")
+        mockMvc.perform(post("/mouvements-stock/entree")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -87,7 +87,7 @@ class MvtStkControllerTest {
     void entreeStock_shouldReturn400_whenArticleIdIsMissing() throws Exception {
         MvtStkRequest invalidRequest = new MvtStkRequest(null, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR);
 
-        mockMvc.perform(post("/api/mouvements-stock/entree")
+        mockMvc.perform(post("/mouvements-stock/entree")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -102,7 +102,7 @@ class MvtStkControllerTest {
         when(mvtStkService.entreeStock(request))
                 .thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 1"));
 
-        mockMvc.perform(post("/api/mouvements-stock/entree")
+        mockMvc.perform(post("/mouvements-stock/entree")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -115,7 +115,7 @@ class MvtStkControllerTest {
 
         when(mvtStkService.sortieStock(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/mouvements-stock/sortie")
+        mockMvc.perform(post("/mouvements-stock/sortie")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -129,7 +129,7 @@ class MvtStkControllerTest {
 
         when(mvtStkService.correctionStockPos(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/mouvements-stock/correction-positive")
+        mockMvc.perform(post("/mouvements-stock/correction-positive")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -140,7 +140,7 @@ class MvtStkControllerTest {
     void correctionPositive_shouldReturn400_whenMotifIsBlank() throws Exception {
         MvtStkCorrectionRequest invalidRequest = new MvtStkCorrectionRequest(1L, new BigDecimal("5"), " ");
 
-        mockMvc.perform(post("/api/mouvements-stock/correction-positive")
+        mockMvc.perform(post("/mouvements-stock/correction-positive")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -155,7 +155,7 @@ class MvtStkControllerTest {
 
         when(mvtStkService.correctionStockNeg(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/mouvements-stock/correction-negative")
+        mockMvc.perform(post("/mouvements-stock/correction-negative")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -166,7 +166,7 @@ class MvtStkControllerTest {
     void correctionNegative_shouldReturn400_whenMotifIsBlank() throws Exception {
         MvtStkCorrectionRequest invalidRequest = new MvtStkCorrectionRequest(1L, new BigDecimal("5"), "");
 
-        mockMvc.perform(post("/api/mouvements-stock/correction-negative")
+        mockMvc.perform(post("/mouvements-stock/correction-negative")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -179,7 +179,7 @@ class MvtStkControllerTest {
         List<MvtStkResponse> responses = List.of(sampleResponse(TypeMvtStk.ENTREE), sampleResponse(TypeMvtStk.SORTIE));
         when(mvtStkService.mvtStkArticle(1L)).thenReturn(responses);
 
-        mockMvc.perform(get("/api/mouvements-stock/article/{idArticle}", 1L))
+        mockMvc.perform(get("/mouvements-stock/article/{idArticle}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].typeMvt").value("ENTREE"))
@@ -191,7 +191,7 @@ class MvtStkControllerTest {
         when(mvtStkService.mvtStkArticle(99L))
                 .thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/mouvements-stock/article/{idArticle}", 99L))
+        mockMvc.perform(get("/mouvements-stock/article/{idArticle}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -199,7 +199,7 @@ class MvtStkControllerTest {
     void stockReelArticle_shouldReturn200WithValue() throws Exception {
         when(mvtStkService.stockReelArticle(1L)).thenReturn(new BigDecimal("8.00"));
 
-        mockMvc.perform(get("/api/mouvements-stock/article/{idArticle}/stock-reel", 1L))
+        mockMvc.perform(get("/mouvements-stock/article/{idArticle}/stock-reel", 1L))
                 .andExpect(status().isOk())
                 .andExpect(content().string("8.00"));
     }
@@ -209,7 +209,7 @@ class MvtStkControllerTest {
         when(mvtStkService.stockReelArticle(99L))
                 .thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/mouvements-stock/article/{idArticle}/stock-reel", 99L))
+        mockMvc.perform(get("/mouvements-stock/article/{idArticle}/stock-reel", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -220,7 +220,7 @@ class MvtStkControllerTest {
         );
         when(mvtStkService.articlesEnAlerte()).thenReturn(alertes);
 
-        mockMvc.perform(get("/api/mouvements-stock/alertes-stock"))
+        mockMvc.perform(get("/mouvements-stock/alertes-stock"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].articleId").value(1L))

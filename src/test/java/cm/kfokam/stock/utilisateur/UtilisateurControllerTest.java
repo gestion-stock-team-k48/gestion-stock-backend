@@ -89,7 +89,7 @@ class UtilisateurControllerTest {
 
         when(utilisateurService.create(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/utilisateurs")
+        mockMvc.perform(post("/utilisateurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -106,7 +106,7 @@ class UtilisateurControllerTest {
                 Set.of(Role.ROLE_ADMIN)
         );
 
-        mockMvc.perform(post("/api/utilisateurs")
+        mockMvc.perform(post("/utilisateurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -122,7 +122,7 @@ class UtilisateurControllerTest {
                 Set.of()
         );
 
-        mockMvc.perform(post("/api/utilisateurs")
+        mockMvc.perform(post("/utilisateurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -137,7 +137,7 @@ class UtilisateurControllerTest {
         when(utilisateurService.create(request))
                 .thenThrow(new DuplicateEmailException("L'email 'francky@kfokam.cm' est déjà utilisé"));
 
-        mockMvc.perform(post("/api/utilisateurs")
+        mockMvc.perform(post("/utilisateurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -150,7 +150,7 @@ class UtilisateurControllerTest {
         when(utilisateurService.create(request))
                 .thenThrow(new EntityNotFoundException("Entreprise introuvable avec l'id : 1"));
 
-        mockMvc.perform(post("/api/utilisateurs")
+        mockMvc.perform(post("/utilisateurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -160,7 +160,7 @@ class UtilisateurControllerTest {
     void getById_shouldReturn200_whenFound() throws Exception {
         when(utilisateurService.getById(1L)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/utilisateurs/{id}", 1L))
+        mockMvc.perform(get("/utilisateurs/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
@@ -170,7 +170,7 @@ class UtilisateurControllerTest {
         when(utilisateurService.getById(99L))
                 .thenThrow(new EntityNotFoundException("Utilisateur introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/utilisateurs/{id}", 99L))
+        mockMvc.perform(get("/utilisateurs/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -179,7 +179,7 @@ class UtilisateurControllerTest {
         List<UtilisateurResponse> responses = List.of(sampleResponse());
         when(utilisateurService.getAll()).thenReturn(responses);
 
-        mockMvc.perform(get("/api/utilisateurs"))
+        mockMvc.perform(get("/utilisateurs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].email").value("francky@kfokam.cm"));
@@ -192,7 +192,7 @@ class UtilisateurControllerTest {
 
         when(utilisateurService.update(eq(1L), any(UtilisateurRequest.class))).thenReturn(response);
 
-        mockMvc.perform(put("/api/utilisateurs/{id}", 1L)
+        mockMvc.perform(put("/utilisateurs/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -206,7 +206,7 @@ class UtilisateurControllerTest {
         when(utilisateurService.update(eq(99L), any(UtilisateurRequest.class)))
                 .thenThrow(new EntityNotFoundException("Utilisateur introuvable avec l'id : 99"));
 
-        mockMvc.perform(put("/api/utilisateurs/{id}", 99L)
+        mockMvc.perform(put("/utilisateurs/{id}", 99L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -214,7 +214,7 @@ class UtilisateurControllerTest {
 
     @Test
     void delete_shouldReturn204_whenFound() throws Exception {
-        mockMvc.perform(delete("/api/utilisateurs/{id}", 1L))
+        mockMvc.perform(delete("/utilisateurs/{id}", 1L))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -226,7 +226,7 @@ class UtilisateurControllerTest {
         org.mockito.Mockito.doThrow(new EntityNotFoundException("Utilisateur introuvable avec l'id : 99"))
                 .when(utilisateurService).delete(99L);
 
-        mockMvc.perform(delete("/api/utilisateurs/{id}", 99L))
+        mockMvc.perform(delete("/utilisateurs/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -235,7 +235,7 @@ class UtilisateurControllerTest {
         authenticateAsUser(1L);
         ChangePasswordRequest request = new ChangePasswordRequest("OldP@ss1", "NewP@ss1!");
 
-        mockMvc.perform(post("/api/utilisateurs/change-password")
+        mockMvc.perform(post("/utilisateurs/change-password")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent());
@@ -248,7 +248,7 @@ class UtilisateurControllerTest {
         authenticateAsUser(1L);
         ChangePasswordRequest invalidRequest = new ChangePasswordRequest("OldP@ss1", "short");
 
-        mockMvc.perform(post("/api/utilisateurs/change-password")
+        mockMvc.perform(post("/utilisateurs/change-password")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -264,7 +264,7 @@ class UtilisateurControllerTest {
         org.mockito.Mockito.doThrow(new BadCredentialsException("L'ancien mot de passe est incorrect"))
                 .when(utilisateurService).changePassword(1L, request);
 
-        mockMvc.perform(post("/api/utilisateurs/change-password")
+        mockMvc.perform(post("/utilisateurs/change-password")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());

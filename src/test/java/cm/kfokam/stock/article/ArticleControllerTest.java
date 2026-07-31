@@ -76,7 +76,7 @@ class ArticleControllerTest {
 
         when(articleService.create(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/articles")
+        mockMvc.perform(post("/articles")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -93,7 +93,7 @@ class ArticleControllerTest {
                 new BigDecimal("19.25"), new BigDecimal("596.25"), "photo.png", new BigDecimal("5"), 1L
         );
 
-        mockMvc.perform(post("/api/articles")
+        mockMvc.perform(post("/articles")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -108,7 +108,7 @@ class ArticleControllerTest {
                 new BigDecimal("19.25"), new BigDecimal("596.25"), "photo.png", new BigDecimal("5"), null
         );
 
-        mockMvc.perform(post("/api/articles")
+        mockMvc.perform(post("/articles")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -123,7 +123,7 @@ class ArticleControllerTest {
         when(articleService.create(request))
                 .thenThrow(new DuplicateCodeException("Le code 'ART-01' est déjà utilisé"));
 
-        mockMvc.perform(post("/api/articles")
+        mockMvc.perform(post("/articles")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -136,7 +136,7 @@ class ArticleControllerTest {
         when(articleService.create(request))
                 .thenThrow(new EntityNotFoundException("Catégorie introuvable avec l'id : 1"));
 
-        mockMvc.perform(post("/api/articles")
+        mockMvc.perform(post("/articles")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -146,7 +146,7 @@ class ArticleControllerTest {
     void getById_shouldReturn200_whenFound() throws Exception {
         when(articleService.getById(1L)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/articles/{id}", 1L))
+        mockMvc.perform(get("/articles/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.code").value("ART-01"));
@@ -157,7 +157,7 @@ class ArticleControllerTest {
         when(articleService.getById(99L))
                 .thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/articles/{id}", 99L))
+        mockMvc.perform(get("/articles/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -170,7 +170,7 @@ class ArticleControllerTest {
         );
         when(articleService.getAll()).thenReturn(responses);
 
-        mockMvc.perform(get("/api/articles"))
+        mockMvc.perform(get("/articles"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].code").value("ART-01"))
@@ -184,7 +184,7 @@ class ArticleControllerTest {
 
         when(articleService.update(eq(1L), any(ArticleRequest.class))).thenReturn(response);
 
-        mockMvc.perform(put("/api/articles/{id}", 1L)
+        mockMvc.perform(put("/articles/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -198,7 +198,7 @@ class ArticleControllerTest {
         when(articleService.update(eq(99L), any(ArticleRequest.class)))
                 .thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"));
 
-        mockMvc.perform(put("/api/articles/{id}", 99L)
+        mockMvc.perform(put("/articles/{id}", 99L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -211,7 +211,7 @@ class ArticleControllerTest {
         when(articleService.update(eq(1L), any(ArticleRequest.class)))
                 .thenThrow(new DuplicateCodeException("Le code 'ART-01' est déjà utilisé"));
 
-        mockMvc.perform(put("/api/articles/{id}", 1L)
+        mockMvc.perform(put("/articles/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -219,7 +219,7 @@ class ArticleControllerTest {
 
     @Test
     void delete_shouldReturn204_whenFound() throws Exception {
-        mockMvc.perform(delete("/api/articles/{id}", 1L))
+        mockMvc.perform(delete("/articles/{id}", 1L))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -231,7 +231,7 @@ class ArticleControllerTest {
         org.mockito.Mockito.doThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"))
                 .when(articleService).delete(99L);
 
-        mockMvc.perform(delete("/api/articles/{id}", 99L))
+        mockMvc.perform(delete("/articles/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 }

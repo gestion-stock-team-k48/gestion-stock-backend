@@ -56,7 +56,7 @@ class EntrepriseControllerTest {
         when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
         when(entrepriseService.getById(ENTREPRISE_ID)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/entreprises/me"))
+        mockMvc.perform(get("/entreprises/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.codeFiscal").value("CF-001"));
@@ -68,7 +68,7 @@ class EntrepriseControllerTest {
         when(entrepriseService.getById(ENTREPRISE_ID))
                 .thenThrow(new EntityNotFoundException("Entreprise introuvable avec l'id : 1"));
 
-        mockMvc.perform(get("/api/entreprises/me"))
+        mockMvc.perform(get("/entreprises/me"))
                 .andExpect(status().isNotFound());
     }
 
@@ -80,7 +80,7 @@ class EntrepriseControllerTest {
         when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
         when(entrepriseService.update(ENTREPRISE_ID, request)).thenReturn(response);
 
-        mockMvc.perform(put("/api/entreprises/me")
+        mockMvc.perform(put("/entreprises/me")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -94,7 +94,7 @@ class EntrepriseControllerTest {
                 "CF-001", "logo.png", "contact@kfokam.cm", "+237600000000", "https://kfokam.cm"
         );
 
-        mockMvc.perform(put("/api/entreprises/me")
+        mockMvc.perform(put("/entreprises/me")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -108,7 +108,7 @@ class EntrepriseControllerTest {
         when(entrepriseService.update(any(), any()))
                 .thenThrow(new EntityNotFoundException("Entreprise introuvable avec l'id : 1"));
 
-        mockMvc.perform(put("/api/entreprises/me")
+        mockMvc.perform(put("/entreprises/me")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());

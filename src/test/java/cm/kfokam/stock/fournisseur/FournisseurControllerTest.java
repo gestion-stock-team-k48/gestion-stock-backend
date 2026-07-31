@@ -61,7 +61,7 @@ class FournisseurControllerTest {
 
         when(fournisseurService.create(request)).thenReturn(response);
 
-        mockMvc.perform(post("/api/fournisseurs")
+        mockMvc.perform(post("/fournisseurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -76,7 +76,7 @@ class FournisseurControllerTest {
                 null, "Douala", null, "Cameroun", "photo.png"
         );
 
-        mockMvc.perform(post("/api/fournisseurs")
+        mockMvc.perform(post("/fournisseurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -91,7 +91,7 @@ class FournisseurControllerTest {
                 null, "Douala", null, "Cameroun", "photo.png"
         );
 
-        mockMvc.perform(post("/api/fournisseurs")
+        mockMvc.perform(post("/fournisseurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -106,7 +106,7 @@ class FournisseurControllerTest {
         when(fournisseurService.create(request))
                 .thenThrow(new DuplicateEmailException("L'email 'paul@example.com' est déjà utilisé"));
 
-        mockMvc.perform(post("/api/fournisseurs")
+        mockMvc.perform(post("/fournisseurs")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -116,7 +116,7 @@ class FournisseurControllerTest {
     void getById_shouldReturn200_whenFound() throws Exception {
         when(fournisseurService.getById(1L)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/fournisseurs/{id}", 1L))
+        mockMvc.perform(get("/fournisseurs/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
@@ -126,7 +126,7 @@ class FournisseurControllerTest {
         when(fournisseurService.getById(99L))
                 .thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/api/fournisseurs/{id}", 99L))
+        mockMvc.perform(get("/fournisseurs/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -139,7 +139,7 @@ class FournisseurControllerTest {
         );
         when(fournisseurService.getAll()).thenReturn(responses);
 
-        mockMvc.perform(get("/api/fournisseurs"))
+        mockMvc.perform(get("/fournisseurs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].email").value("paul@example.com"))
@@ -153,7 +153,7 @@ class FournisseurControllerTest {
 
         when(fournisseurService.update(eq(1L), any(FournisseurRequest.class))).thenReturn(response);
 
-        mockMvc.perform(put("/api/fournisseurs/{id}", 1L)
+        mockMvc.perform(put("/fournisseurs/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -167,7 +167,7 @@ class FournisseurControllerTest {
         when(fournisseurService.update(eq(99L), any(FournisseurRequest.class)))
                 .thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 99"));
 
-        mockMvc.perform(put("/api/fournisseurs/{id}", 99L)
+        mockMvc.perform(put("/fournisseurs/{id}", 99L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -180,7 +180,7 @@ class FournisseurControllerTest {
         when(fournisseurService.update(eq(1L), any(FournisseurRequest.class)))
                 .thenThrow(new DuplicateEmailException("L'email 'paul@example.com' est déjà utilisé"));
 
-        mockMvc.perform(put("/api/fournisseurs/{id}", 1L)
+        mockMvc.perform(put("/fournisseurs/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -188,7 +188,7 @@ class FournisseurControllerTest {
 
     @Test
     void delete_shouldReturn204_whenFound() throws Exception {
-        mockMvc.perform(delete("/api/fournisseurs/{id}", 1L))
+        mockMvc.perform(delete("/fournisseurs/{id}", 1L))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -200,7 +200,7 @@ class FournisseurControllerTest {
         org.mockito.Mockito.doThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 99"))
                 .when(fournisseurService).delete(99L);
 
-        mockMvc.perform(delete("/api/fournisseurs/{id}", 99L))
+        mockMvc.perform(delete("/fournisseurs/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 }
