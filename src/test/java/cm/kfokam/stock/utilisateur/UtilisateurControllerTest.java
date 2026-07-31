@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -210,6 +213,39 @@ class UtilisateurControllerTest {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void uploadPhoto_shouldReturn200_whenValidFile() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "dummy content".getBytes());
+
+        when(utilisateurService.uploadPhoto(eq(1L), any())).thenReturn(sampleResponse());
+
+        mockMvc.perform(multipart("/api/utilisateurs/{id}/photo", 1L).file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
+    }
+
+    @Test
+    void uploadPhoto_shouldReturn404_whenUtilisateurNotFound() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "dummy content".getBytes());
+
+        when(utilisateurService.uploadPhoto(eq(99L), any()))
+                .thenThrow(new EntityNotFoundException("Utilisateur introuvable avec l'id : 99"));
+
+        mockMvc.perform(multipart("/api/utilisateurs/{id}/photo", 99L).file(file))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void uploadPhoto_shouldReturn403_whenUploadingAnotherUsersPhoto() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "dummy content".getBytes());
+
+        when(utilisateurService.uploadPhoto(eq(2L), any()))
+                .thenThrow(new AccessDeniedException("Vous ne pouvez modifier que votre propre photo"));
+
+        mockMvc.perform(multipart("/api/utilisateurs/{id}/photo", 2L).file(file))
+                .andExpect(status().isForbidden());
     }
 
     @Test

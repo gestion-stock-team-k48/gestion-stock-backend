@@ -4,6 +4,7 @@ import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.storage.FileStorageService;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
@@ -16,8 +17,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -53,6 +57,9 @@ class UtilisateurServiceImplTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private UtilisateurServiceImpl utilisateurService;
@@ -258,6 +265,64 @@ class UtilisateurServiceImplTest {
                 .hasMessageContaining("other@kfokam.cm");
 
         verify(utilisateurRepository, never()).save(any());
+    }
+
+    @Test
+    void uploadPhoto_shouldReplacePhoto_andDeleteOldOne() {
+        utilisateur.setPhoto("old-photo.png");
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(currentUserService.getCurrentUtilisateur()).thenReturn(utilisateur);
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(utilisateur));
+        when(fileStorageService.uploadFile(file, "utilisateurs")).thenReturn("utilisateurs/new-uuid.png");
+        when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
+        when(utilisateurMapper.toResponse(utilisateur)).thenReturn(response);
+
+        UtilisateurResponse result = utilisateurService.uploadPhoto(1L, file);
+
+        assertThat(result).isEqualTo(response);
+        assertThat(utilisateur.getPhoto()).isEqualTo("utilisateurs/new-uuid.png");
+        verify(fileStorageService).deleteFile("old-photo.png");
+    }
+
+    @Test
+    void uploadPhoto_shouldNotDeleteOldPhoto_whenUtilisateurHadNone() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(currentUserService.getCurrentUtilisateur()).thenReturn(utilisateur);
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(utilisateur));
+        when(fileStorageService.uploadFile(file, "utilisateurs")).thenReturn("utilisateurs/new-uuid.png");
+        when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
+        when(utilisateurMapper.toResponse(utilisateur)).thenReturn(response);
+
+        utilisateurService.uploadPhoto(1L, file);
+
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
+    void uploadPhoto_shouldThrowEntityNotFoundException_whenUtilisateurNotFound() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(currentUserService.getCurrentUtilisateur()).thenReturn(Utilisateur.builder().id(99L).build());
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> utilisateurService.uploadPhoto(99L, file))
+                .isInstanceOf(EntityNotFoundException.class);
+
+        verify(fileStorageService, never()).uploadFile(any(), any());
+    }
+
+    @Test
+    void uploadPhoto_shouldThrowAccessDeniedException_whenUploadingAnotherUsersPhoto() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(currentUserService.getCurrentUtilisateur()).thenReturn(Utilisateur.builder().id(2L).build());
+
+        assertThatThrownBy(() -> utilisateurService.uploadPhoto(1L, file))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(utilisateurRepository, never()).findByIdAndEntrepriseId(any(), any());
+        verify(fileStorageService, never()).uploadFile(any(), any());
     }
 
     @Test

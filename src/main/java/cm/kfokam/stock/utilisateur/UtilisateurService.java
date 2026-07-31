@@ -3,6 +3,7 @@ package cm.kfokam.stock.utilisateur;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +21,8 @@ public interface UtilisateurService {
     List<UtilisateurResponse> getAll();
 
     UtilisateurResponse update(Long id, UtilisateurRequest request);
+
+    UtilisateurResponse uploadPhoto(Long id, MultipartFile file);
 
     void delete(Long id);
 

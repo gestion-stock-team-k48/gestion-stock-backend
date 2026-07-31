@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,7 +23,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -87,6 +90,23 @@ public class UtilisateurController {
             @Parameter(description = "Identifiant de l'utilisateur", example = "1") @PathVariable Long id,
             @Valid @RequestBody UtilisateurRequest request) {
         return ResponseEntity.ok(utilisateurService.update(id, request));
+    }
+
+    @Operation(summary = "Uploader la photo d'un utilisateur", description = "Enregistre la photo de l'utilisateur authentifié dans le bucket MinIO (uniquement sa propre photo)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Photo mise à jour"),
+            @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant"),
+            @ApiResponse(responseCode = "401", description = "Non authentifié"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - un utilisateur ne peut modifier que sa propre photo"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable"),
+            @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UtilisateurResponse> uploadPhoto(
+            @Parameter(description = "Identifiant de l'utilisateur", example = "1") @PathVariable Long id,
+            @Parameter(description = "Fichier image à uploader") @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(utilisateurService.uploadPhoto(id, file));
     }
 
     @Operation(summary = "Supprimer un utilisateur", description = "Supprime définitivement un utilisateur")

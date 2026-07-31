@@ -10,10 +10,12 @@ import cm.kfokam.stock.category.model.Category;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,11 +24,14 @@ import java.util.List;
 @Transactional
 class ArticleServiceImpl implements ArticleService {
 
+    private static final String PHOTO_FOLDER = "articles";
+
     private final ArticleRepository articleRepository;
     private final CategoryService categoryService;
     private final ArticleMapper articleMapper;
     private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
+    private final FileStorageService fileStorageService;
 
     @Override
     public ArticleResponse create(ArticleRequest request) {
@@ -76,9 +81,29 @@ class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    public ArticleResponse uploadPhoto(Long id, MultipartFile file) {
+        Article article = findArticleOrThrow(id);
+        String previousPhoto = article.getPhoto();
+
+        String objectName = fileStorageService.uploadFile(file, PHOTO_FOLDER);
+        article.setPhoto(objectName);
+        Article saved = articleRepository.save(article);
+
+        if (previousPhoto != null) {
+            fileStorageService.deleteFile(previousPhoto);
+        }
+
+        return articleMapper.toResponse(saved);
+    }
+
+    @Override
     public void delete(Long id) {
         Article article = findArticleOrThrow(id);
+        String photo = article.getPhoto();
         articleRepository.delete(article);
+        if (photo != null) {
+            fileStorageService.deleteFile(photo);
+        }
     }
 
     private Article findArticleOrThrow(Long id) {
