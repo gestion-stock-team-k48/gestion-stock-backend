@@ -7,6 +7,7 @@ import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.fournisseur.dto.FournisseurRequest;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
 import cm.kfokam.stock.fournisseur.model.Fournisseur;
+import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +46,9 @@ class FournisseurServiceImplTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private FournisseurServiceImpl fournisseurService;
@@ -204,12 +210,53 @@ class FournisseurServiceImplTest {
     }
 
     @Test
+    void uploadPhoto_shouldReplacePhoto_andDeleteOldOne() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
+        when(fileStorageService.uploadFile(file, "fournisseurs")).thenReturn("fournisseurs/new-uuid.png");
+        when(fournisseurRepository.save(fournisseur)).thenReturn(fournisseur);
+        when(fournisseurMapper.toResponse(fournisseur)).thenReturn(response);
+
+        FournisseurResponse result = fournisseurService.uploadPhoto(1L, file);
+
+        assertThat(result).isEqualTo(response);
+        assertThat(fournisseur.getPhoto()).isEqualTo("fournisseurs/new-uuid.png");
+        verify(fileStorageService).deleteFile("photo.png");
+    }
+
+    @Test
+    void uploadPhoto_shouldNotDeleteOldPhoto_whenFournisseurHadNone() {
+        fournisseur.setPhoto(null);
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
+        when(fileStorageService.uploadFile(file, "fournisseurs")).thenReturn("fournisseurs/new-uuid.png");
+        when(fournisseurRepository.save(fournisseur)).thenReturn(fournisseur);
+        when(fournisseurMapper.toResponse(fournisseur)).thenReturn(response);
+
+        fournisseurService.uploadPhoto(1L, file);
+
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
+    void uploadPhoto_shouldThrowEntityNotFoundException_whenFournisseurNotFound() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(fournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> fournisseurService.uploadPhoto(99L, file))
+                .isInstanceOf(EntityNotFoundException.class);
+
+        verify(fileStorageService, never()).uploadFile(any(), any());
+    }
+
+    @Test
     void delete_shouldDeleteFournisseur_whenFound() {
         when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
 
         fournisseurService.delete(1L);
 
         verify(fournisseurRepository, times(1)).delete(fournisseur);
+        verify(fileStorageService).deleteFile("photo.png");
     }
 
     @Test

@@ -7,10 +7,12 @@ import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.fournisseur.dto.FournisseurRequest;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
 import cm.kfokam.stock.fournisseur.model.Fournisseur;
+import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,10 +21,13 @@ import java.util.List;
 @Transactional
 class FournisseurServiceImpl implements FournisseurService {
 
+    private static final String PHOTO_FOLDER = "fournisseurs";
+
     private final FournisseurRepository fournisseurRepository;
     private final FournisseurMapper fournisseurMapper;
     private final CurrentUserService currentUserService;
     private final EntityManager entityManager;
+    private final FileStorageService fileStorageService;
 
     @Override
     public FournisseurResponse create(FournisseurRequest request) {
@@ -64,9 +69,29 @@ class FournisseurServiceImpl implements FournisseurService {
     }
 
     @Override
+    public FournisseurResponse uploadPhoto(Long id, MultipartFile file) {
+        Fournisseur fournisseur = findFournisseurOrThrow(id);
+        String previousPhoto = fournisseur.getPhoto();
+
+        String objectName = fileStorageService.uploadFile(file, PHOTO_FOLDER);
+        fournisseur.setPhoto(objectName);
+        Fournisseur saved = fournisseurRepository.save(fournisseur);
+
+        if (previousPhoto != null) {
+            fileStorageService.deleteFile(previousPhoto);
+        }
+
+        return fournisseurMapper.toResponse(saved);
+    }
+
+    @Override
     public void delete(Long id) {
         Fournisseur fournisseur = findFournisseurOrThrow(id);
+        String photo = fournisseur.getPhoto();
         fournisseurRepository.delete(fournisseur);
+        if (photo != null) {
+            fileStorageService.deleteFile(photo);
+        }
     }
 
     private Fournisseur findFournisseurOrThrow(Long id) {
