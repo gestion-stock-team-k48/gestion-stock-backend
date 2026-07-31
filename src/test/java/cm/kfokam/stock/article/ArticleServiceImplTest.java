@@ -9,6 +9,7 @@ import cm.kfokam.stock.category.dto.CategoryResponse;
 import cm.kfokam.stock.category.model.Category;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -49,6 +52,9 @@ class ArticleServiceImplTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private ArticleServiceImpl articleService;
@@ -273,12 +279,53 @@ class ArticleServiceImplTest {
     }
 
     @Test
+    void uploadPhoto_shouldReplacePhoto_andDeleteOldOne() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
+        when(fileStorageService.uploadFile(file, "articles")).thenReturn("articles/new-uuid.png");
+        when(articleRepository.save(article)).thenReturn(article);
+        when(articleMapper.toResponse(article)).thenReturn(response);
+
+        ArticleResponse result = articleService.uploadPhoto(1L, file);
+
+        assertThat(result).isEqualTo(response);
+        assertThat(article.getPhoto()).isEqualTo("articles/new-uuid.png");
+        verify(fileStorageService).deleteFile("photo.png");
+    }
+
+    @Test
+    void uploadPhoto_shouldNotDeleteOldPhoto_whenArticleHadNone() {
+        article.setPhoto(null);
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
+        when(fileStorageService.uploadFile(file, "articles")).thenReturn("articles/new-uuid.png");
+        when(articleRepository.save(article)).thenReturn(article);
+        when(articleMapper.toResponse(article)).thenReturn(response);
+
+        articleService.uploadPhoto(1L, file);
+
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
+    void uploadPhoto_shouldThrowEntityNotFoundException_whenArticleNotFound() {
+        MultipartFile file = new MockMultipartFile("file", "new.png", "image/png", "dummy content".getBytes());
+        when(articleRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> articleService.uploadPhoto(99L, file))
+                .isInstanceOf(EntityNotFoundException.class);
+
+        verify(fileStorageService, never()).uploadFile(any(), any());
+    }
+
+    @Test
     void delete_shouldDeleteArticle_whenFound() {
         when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
 
         articleService.delete(1L);
 
         verify(articleRepository, times(1)).delete(article);
+        verify(fileStorageService).deleteFile("photo.png");
     }
 
     @Test

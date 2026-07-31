@@ -4,6 +4,7 @@ import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.storage.FileStorageService;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
@@ -13,12 +14,14 @@ import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -32,12 +35,14 @@ import java.util.UUID;
 class UtilisateurServiceImpl implements UtilisateurService {
 
     private static final int TEMPORARY_PASSWORD_LENGTH = 10;
+    private static final String PHOTO_FOLDER = "utilisateurs";
 
     private final UtilisateurRepository utilisateurRepository;
     private final CurrentUserService currentUserService;
     private final UtilisateurMapper utilisateurMapper;
     private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
+    private final FileStorageService fileStorageService;
 
     @Bean
     UserDetailsService userDetailsService() {
@@ -117,9 +122,34 @@ class UtilisateurServiceImpl implements UtilisateurService {
     }
 
     @Override
+    public UtilisateurResponse uploadPhoto(Long id, MultipartFile file) {
+        // Self-service only: even an ADMIN cannot upload another user's photo through this endpoint.
+        if (!currentUserService.getCurrentUtilisateur().getId().equals(id)) {
+            throw new AccessDeniedException("Vous ne pouvez modifier que votre propre photo");
+        }
+
+        Utilisateur utilisateur = findUtilisateurOrThrow(id);
+        String previousPhoto = utilisateur.getPhoto();
+
+        String objectName = fileStorageService.uploadFile(file, PHOTO_FOLDER);
+        utilisateur.setPhoto(objectName);
+        Utilisateur saved = utilisateurRepository.save(utilisateur);
+
+        if (previousPhoto != null) {
+            fileStorageService.deleteFile(previousPhoto);
+        }
+
+        return utilisateurMapper.toResponse(saved);
+    }
+
+    @Override
     public void delete(Long id) {
         Utilisateur utilisateur = findUtilisateurOrThrow(id);
+        String photo = utilisateur.getPhoto();
         utilisateurRepository.delete(utilisateur);
+        if (photo != null) {
+            fileStorageService.deleteFile(photo);
+        }
     }
 
     @Override

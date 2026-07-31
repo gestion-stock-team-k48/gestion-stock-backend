@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,7 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -88,6 +91,23 @@ public class ArticleController {
             @Parameter(description = "Identifiant de l'article", example = "1") @PathVariable Long id,
             @Valid @RequestBody ArticleRequest request) {
         return ResponseEntity.ok(articleService.update(id, request));
+    }
+
+    @Operation(summary = "Uploader la photo d'un article", description = "Enregistre la photo d'un article dans le bucket MinIO")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Photo mise à jour"),
+            @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant"),
+            @ApiResponse(responseCode = "401", description = "Non authentifié"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
+            @ApiResponse(responseCode = "404", description = "Article introuvable"),
+            @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ArticleResponse> uploadPhoto(
+            @Parameter(description = "Identifiant de l'article", example = "1") @PathVariable Long id,
+            @Parameter(description = "Fichier image à uploader") @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(articleService.uploadPhoto(id, file));
     }
 
     @Operation(summary = "Supprimer un article", description = "Supprime définitivement un article du catalogue")
