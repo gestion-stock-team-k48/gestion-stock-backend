@@ -6,6 +6,7 @@ import cm.kfokam.stock.category.dto.CategoryResponse;
 import cm.kfokam.stock.category.model.Category;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -194,6 +195,18 @@ class CategoryServiceImplTest {
 
         assertThatThrownBy(() -> categoryService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class);
+
+        verify(categoryRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_shouldThrowInvalidOperationException_whenCategoryHasArticles() {
+        when(categoryRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(category));
+        when(categoryRepository.existsArticleForCategory(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> categoryService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Impossible de supprimer cette catégorie car elle contient des articles.");
 
         verify(categoryRepository, never()).delete(any());
     }

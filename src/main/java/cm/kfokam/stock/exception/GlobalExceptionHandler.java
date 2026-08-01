@@ -1,6 +1,8 @@
 package cm.kfokam.stock.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -39,6 +41,19 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOperation(InvalidOperationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    // Filet de sécurité : toute violation de contrainte d'intégrité non anticipée par une
+    // vérification métier explicite (InvalidOperationException) remonte ici plutôt qu'en 500 brut.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT,
+                "Impossible d'effectuer cette opération car la ressource est référencée par d'autres données.", request);
+    }
+
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
@@ -49,9 +64,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect", request);
     }
 
+    // Message générique ("Access Denied") pour la plupart des refus de rôle, mais un message dédié
+    // et plus parlant pour les suppressions, où la conséquence d'un refus est la plus sensible.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+        String message = HttpMethod.DELETE.matches(request.getMethod())
+                ? "Vous n'avez pas les autorisations nécessaires (Rôle requis) pour exécuter cette suppression."
+                : ex.getMessage();
+        return buildResponse(HttpStatus.FORBIDDEN, message, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/articles")
@@ -112,16 +113,17 @@ public class ArticleController {
 
     @Operation(summary = "Supprimer un article", description = "Supprime définitivement un article du catalogue")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Article supprimé"),
+            @ApiResponse(responseCode = "200", description = "Article supprimé"),
             @ApiResponse(responseCode = "401", description = "Non authentifié"),
             @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Article introuvable")
+            @ApiResponse(responseCode = "404", description = "Article introuvable"),
+            @ApiResponse(responseCode = "409", description = "L'article est encore associé à des commandes ou des mouvements de stock")
     })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<Map<String, String>> delete(
             @Parameter(description = "Identifiant de l'article", example = "1") @PathVariable Long id) {
         articleService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Article supprimé avec succès."));
     }
 }

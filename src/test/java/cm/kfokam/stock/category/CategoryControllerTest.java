@@ -47,7 +47,7 @@ class CategoryControllerTest {
 
         when(categoryService.create(request)).thenReturn(response);
 
-        mockMvc.perform(post("/categories")
+        mockMvc.perform(post("/api/categories")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -60,7 +60,7 @@ class CategoryControllerTest {
     void create_shouldReturn400_whenCodeIsBlank() throws Exception {
         CategoryRequest invalidRequest = new CategoryRequest(" ", "Informatique");
 
-        mockMvc.perform(post("/categories")
+        mockMvc.perform(post("/api/categories")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -75,7 +75,7 @@ class CategoryControllerTest {
         when(categoryService.create(request))
                 .thenThrow(new DuplicateCodeException("Le code 'CAT-01' est déjà utilisé"));
 
-        mockMvc.perform(post("/categories")
+        mockMvc.perform(post("/api/categories")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -86,7 +86,7 @@ class CategoryControllerTest {
         CategoryResponse response = new CategoryResponse(1L, "CAT-01", "Informatique");
         when(categoryService.getById(1L)).thenReturn(response);
 
-        mockMvc.perform(get("/categories/{id}", 1L))
+        mockMvc.perform(get("/api/categories/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.code").value("CAT-01"));
@@ -97,7 +97,7 @@ class CategoryControllerTest {
         when(categoryService.getById(99L))
                 .thenThrow(new EntityNotFoundException("Catégorie introuvable avec l'id : 99"));
 
-        mockMvc.perform(get("/categories/{id}", 99L))
+        mockMvc.perform(get("/api/categories/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
@@ -109,7 +109,7 @@ class CategoryControllerTest {
         );
         when(categoryService.getAll()).thenReturn(responses);
 
-        mockMvc.perform(get("/categories"))
+        mockMvc.perform(get("/api/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].code").value("CAT-01"))
@@ -123,7 +123,7 @@ class CategoryControllerTest {
 
         when(categoryService.update(eq(1L), any(CategoryRequest.class))).thenReturn(response);
 
-        mockMvc.perform(put("/categories/{id}", 1L)
+        mockMvc.perform(put("/api/categories/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -137,7 +137,7 @@ class CategoryControllerTest {
         when(categoryService.update(eq(99L), any(CategoryRequest.class)))
                 .thenThrow(new EntityNotFoundException("Catégorie introuvable avec l'id : 99"));
 
-        mockMvc.perform(put("/categories/{id}", 99L)
+        mockMvc.perform(put("/api/categories/{id}", 99L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -150,7 +150,7 @@ class CategoryControllerTest {
         when(categoryService.update(eq(1L), any(CategoryRequest.class)))
                 .thenThrow(new DuplicateCodeException("Le code 'CAT-02' est déjà utilisé"));
 
-        mockMvc.perform(put("/categories/{id}", 1L)
+        mockMvc.perform(put("/api/categories/{id}", 1L)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -158,7 +158,7 @@ class CategoryControllerTest {
 
     @Test
     void delete_shouldReturn204_whenFound() throws Exception {
-        mockMvc.perform(delete("/categories/{id}", 1L))
+        mockMvc.perform(delete("/api/categories/{id}", 1L))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -170,7 +170,7 @@ class CategoryControllerTest {
         org.mockito.Mockito.doThrow(new EntityNotFoundException("Catégorie introuvable avec l'id : 99"))
                 .when(categoryService).delete(99L);
 
-        mockMvc.perform(delete("/categories/{id}", 99L))
+        mockMvc.perform(delete("/api/categories/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 }

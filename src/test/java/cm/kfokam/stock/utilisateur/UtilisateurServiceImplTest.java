@@ -336,6 +336,18 @@ class UtilisateurServiceImplTest {
     }
 
     @Test
+    void delete_shouldNotDeletePhoto_whenPhotoIsBlank() {
+        utilisateur.setPhoto("   ");
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(utilisateur));
+
+        utilisateurService.delete(1L);
+
+        verify(utilisateurRepository, times(1)).delete(utilisateur);
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
         when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
         when(utilisateurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());

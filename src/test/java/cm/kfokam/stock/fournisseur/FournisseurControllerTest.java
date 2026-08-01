@@ -194,7 +194,7 @@ class FournisseurControllerTest {
 
         when(fournisseurService.uploadPhoto(eq(1L), any())).thenReturn(sampleResponse());
 
-        mockMvc.perform(multipart("/api/fournisseurs/{id}/photo", 1L).file(file))
+        mockMvc.perform(multipart("/fournisseurs/{id}/photo", 1L).file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
@@ -206,7 +206,7 @@ class FournisseurControllerTest {
         when(fournisseurService.uploadPhoto(eq(99L), any()))
                 .thenThrow(new EntityNotFoundException("Fournisseur introuvable avec l'id : 99"));
 
-        mockMvc.perform(multipart("/api/fournisseurs/{id}/photo", 99L).file(file))
+        mockMvc.perform(multipart("/fournisseurs/{id}/photo", 99L).file(file))
                 .andExpect(status().isNotFound());
     }
 

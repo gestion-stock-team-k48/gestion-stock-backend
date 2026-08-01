@@ -221,7 +221,7 @@ class UtilisateurControllerTest {
 
         when(utilisateurService.uploadPhoto(eq(1L), any())).thenReturn(sampleResponse());
 
-        mockMvc.perform(multipart("/api/utilisateurs/{id}/photo", 1L).file(file))
+        mockMvc.perform(multipart("/utilisateurs/{id}/photo", 1L).file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
@@ -233,7 +233,7 @@ class UtilisateurControllerTest {
         when(utilisateurService.uploadPhoto(eq(99L), any()))
                 .thenThrow(new EntityNotFoundException("Utilisateur introuvable avec l'id : 99"));
 
-        mockMvc.perform(multipart("/api/utilisateurs/{id}/photo", 99L).file(file))
+        mockMvc.perform(multipart("/utilisateurs/{id}/photo", 99L).file(file))
                 .andExpect(status().isNotFound());
     }
 
@@ -244,7 +244,7 @@ class UtilisateurControllerTest {
         when(utilisateurService.uploadPhoto(eq(2L), any()))
                 .thenThrow(new AccessDeniedException("Vous ne pouvez modifier que votre propre photo"));
 
-        mockMvc.perform(multipart("/api/utilisateurs/{id}/photo", 2L).file(file))
+        mockMvc.perform(multipart("/utilisateurs/{id}/photo", 2L).file(file))
                 .andExpect(status().isForbidden());
     }
 

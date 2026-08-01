@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/categories")
@@ -91,16 +92,17 @@ public class CategoryController {
 
     @Operation(summary = "Supprimer une catégorie", description = "Supprime définitivement une catégorie")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Catégorie supprimée"),
+            @ApiResponse(responseCode = "200", description = "Catégorie supprimée"),
             @ApiResponse(responseCode = "401", description = "Non authentifié"),
             @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Catégorie introuvable")
+            @ApiResponse(responseCode = "404", description = "Catégorie introuvable"),
+            @ApiResponse(responseCode = "409", description = "La catégorie contient encore des articles")
     })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<Map<String, String>> delete(
             @Parameter(description = "Identifiant de la catégorie", example = "1") @PathVariable Long id) {
         categoryService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Catégorie supprimée avec succès."));
     }
 }

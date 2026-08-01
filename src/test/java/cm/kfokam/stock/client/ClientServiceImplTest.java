@@ -260,6 +260,17 @@ class ClientServiceImplTest {
     }
 
     @Test
+    void delete_shouldNotDeletePhoto_whenPhotoIsBlank() {
+        client.setPhoto("   ");
+        when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));
+
+        clientService.delete(1L);
+
+        verify(clientRepository, times(1)).delete(client);
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
         when(clientRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
