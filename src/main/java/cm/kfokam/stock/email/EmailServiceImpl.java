@@ -21,6 +21,10 @@ class EmailServiceImpl implements EmailService {
 
     private static final String TEMPLATE_CONFIRMATION_CLIENT = "email/commande-client-confirmation";
     private static final String TEMPLATE_ORDRE_FOURNISSEUR = "email/commande-fournisseur-ordre";
+    private static final String TEMPLATE_RESET_PASSWORD = "email/reset-password";
+    private static final String TEMPLATE_NOUVEL_UTILISATEUR = "email/nouvel-utilisateur";
+    private static final String TEMPLATE_ETAT_COMMANDE_CLIENT = "email/commande-client-etat";
+    private static final String TEMPLATE_ETAT_COMMANDE_FOURNISSEUR = "email/commande-fournisseur-etat";
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
@@ -57,6 +61,49 @@ class EmailServiceImpl implements EmailService {
 
         envoyer(destinataire, "Nouvel ordre de commande %s".formatted(commande.codeCommande()),
                 TEMPLATE_ORDRE_FOURNISSEUR, context);
+    }
+
+    @Override
+    public void envoyerResetMotDePasse(String destinataire, String token, long expirationMinutes) {
+        Context context = new Context();
+        context.setVariable("token", token);
+        context.setVariable("expirationMinutes", expirationMinutes);
+
+        envoyer(destinataire, "Réinitialisation de votre mot de passe", TEMPLATE_RESET_PASSWORD, context);
+    }
+
+    @Override
+    public void envoyerMotDePasseTemporaire(String destinataire, String prenom, String temporaryPassword) {
+        Context context = new Context();
+        context.setVariable("prenom", prenom);
+        context.setVariable("email", destinataire);
+        context.setVariable("temporaryPassword", temporaryPassword);
+
+        envoyer(destinataire, "Votre compte Gestion Stock a été créé", TEMPLATE_NOUVEL_UTILISATEUR, context);
+    }
+
+    @Override
+    public void envoyerNotificationEtatCommandeClient(String destinataire, CommandeClientResponse commande) {
+        Context context = new Context();
+        context.setVariable("clientNom", commande.clientNom());
+        context.setVariable("clientPrenom", commande.clientPrenom());
+        context.setVariable("codeCommande", commande.codeCommande());
+        context.setVariable("etatCommande", commande.etatCommande().name());
+
+        envoyer(destinataire, "Mise à jour de votre commande %s".formatted(commande.codeCommande()),
+                TEMPLATE_ETAT_COMMANDE_CLIENT, context);
+    }
+
+    @Override
+    public void envoyerNotificationEtatCommandeFournisseur(String destinataire, CommandeFournisseurResponse commande) {
+        Context context = new Context();
+        context.setVariable("fournisseurNom", commande.fournisseurNom());
+        context.setVariable("fournisseurPrenom", commande.fournisseurPrenom());
+        context.setVariable("codeCommande", commande.codeCommande());
+        context.setVariable("etatCommande", commande.etatCommande().name());
+
+        envoyer(destinataire, "Mise à jour de votre commande %s".formatted(commande.codeCommande()),
+                TEMPLATE_ETAT_COMMANDE_FOURNISSEUR, context);
     }
 
     // Never lets a mail failure (SMTP down, bad address, broken template, ...) propagate — a commande

@@ -61,6 +61,18 @@ public record RegisterRequest(
         String motDePasse,
 
         @Past(message = "La date de naissance doit être dans le passé")
-        LocalDate dateDeNaissance
+        LocalDate dateDeNaissance,
+
+        @Size(max = 150, message = "La rue ne doit pas dépasser 150 caractères")
+        String rueAdmin,
+
+        @Size(max = 100, message = "La ville ne doit pas dépasser 100 caractères")
+        String villeAdmin,
+
+        @Size(max = 20, message = "Le code postal ne doit pas dépasser 20 caractères")
+        String codePostalAdmin,
+
+        @Size(max = 100, message = "Le pays ne doit pas dépasser 100 caractères")
+        String paysAdmin
 ) {
 }

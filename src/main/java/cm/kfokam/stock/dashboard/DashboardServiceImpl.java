@@ -10,6 +10,7 @@ import cm.kfokam.stock.vente.VenteService;
 import cm.kfokam.stock.vente.dto.VenteResponse;
 import cm.kfokam.stock.vente.dto.ligneVente.LigneVenteResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +39,9 @@ class DashboardServiceImpl implements DashboardService {
 
     @Override
     public DashboardStatsResponse getStatistiques() {
-        List<VenteResponse> ventes = venteService.getAll();
-        List<CommandeClientResponse> commandesClient = commandeClientService.getAll();
-        List<CommandeFournisseurResponse> commandesFournisseur = commandeFournisseurService.getAll();
+        List<VenteResponse> ventes = venteService.getAll(Pageable.unpaged()).getContent();
+        List<CommandeClientResponse> commandesClient = commandeClientService.getAll(Pageable.unpaged()).getContent();
+        List<CommandeFournisseurResponse> commandesFournisseur = commandeFournisseurService.getAll(Pageable.unpaged()).getContent();
 
         YearMonth moisCourant = YearMonth.now();
 

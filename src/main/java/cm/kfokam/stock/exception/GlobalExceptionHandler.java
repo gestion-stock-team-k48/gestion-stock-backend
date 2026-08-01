@@ -1,6 +1,7 @@
 package cm.kfokam.stock.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(EntityNotFoundException.class)
@@ -85,6 +87,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FileStorageException.class)
     public ResponseEntity<ErrorResponse> handleFileStorage(FileStorageException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
+    }
+
+    // Filet de sécurité final : toute exception non anticipée par un handler dédié ci-dessus garde le
+    // même format ErrorResponse que le reste de l'API, plutôt que la page d'erreur par défaut de Spring
+    // Boot. Toujours placé en dernier : Spring choisit le handler le plus spécifique, peu importe l'ordre
+    // de déclaration, donc les handlers ci-dessus restent prioritaires.
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
+        log.error("Erreur interne inattendue sur {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Une erreur interne est survenue. Veuillez réessayer plus tard.", request);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, HttpServletRequest request) {

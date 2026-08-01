@@ -1,6 +1,8 @@
 package cm.kfokam.stock.commandefournisseur;
 
 import cm.kfokam.stock.commandefournisseur.model.CommandeFournisseur;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -14,7 +16,7 @@ interface CommandeFournisseurRepository extends JpaRepository<CommandeFournisseu
 
     Optional<CommandeFournisseur> findByIdAndEntrepriseId(Long id, Long entrepriseId);
 
-    List<CommandeFournisseur> findAllByEntrepriseId(Long entrepriseId);
+    Page<CommandeFournisseur> findAllByEntrepriseId(Long entrepriseId, Pageable pageable);
 
     List<CommandeFournisseur> findAllByFournisseurIdAndEntrepriseIdOrderByDateCommandeDesc(Long fournisseurId, Long entrepriseId);
 

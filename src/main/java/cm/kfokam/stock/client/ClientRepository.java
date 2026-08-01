@@ -1,9 +1,10 @@
 package cm.kfokam.stock.client;
 
 import cm.kfokam.stock.client.model.Client;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 interface ClientRepository extends JpaRepository<Client, Long> {
@@ -14,5 +15,5 @@ interface ClientRepository extends JpaRepository<Client, Long> {
 
     Optional<Client> findByIdAndEntrepriseId(Long id, Long entrepriseId);
 
-    List<Client> findAllByEntrepriseId(Long entrepriseId);
+    Page<Client> findAllByEntrepriseId(Long entrepriseId, Pageable pageable);
 }

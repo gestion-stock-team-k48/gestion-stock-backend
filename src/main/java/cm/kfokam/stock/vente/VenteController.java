@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,8 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/ventes")
@@ -82,8 +83,8 @@ public class VenteController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<List<VenteResponse>> getAll() {
-        return ResponseEntity.ok(venteService.getAll());
+    public ResponseEntity<Page<VenteResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(venteService.getAll(pageable));
     }
 
     @Operation(summary = "Supprimer une vente", description = "Supprime définitivement une vente")
@@ -91,7 +92,8 @@ public class VenteController {
             @ApiResponse(responseCode = "204", description = "Vente supprimée"),
             @ApiResponse(responseCode = "401", description = "Non authentifié"),
             @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Vente introuvable")
+            @ApiResponse(responseCode = "404", description = "Vente introuvable"),
+            @ApiResponse(responseCode = "409", description = "Suppression interdite : la vente a déjà généré des mouvements de stock")
     })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")

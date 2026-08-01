@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -20,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -177,18 +181,19 @@ class MvtStkControllerTest {
     @Test
     void mvtStkArticle_shouldReturn200WithList() throws Exception {
         List<MvtStkResponse> responses = List.of(sampleResponse(TypeMvtStk.ENTREE), sampleResponse(TypeMvtStk.SORTIE));
-        when(mvtStkService.mvtStkArticle(1L)).thenReturn(responses);
+        Page<MvtStkResponse> page = new PageImpl<>(responses);
+        when(mvtStkService.mvtStkArticle(eq(1L), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/mouvements-stock/article/{idArticle}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].typeMvt").value("ENTREE"))
-                .andExpect(jsonPath("$[1].typeMvt").value("SORTIE"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].typeMvt").value("ENTREE"))
+                .andExpect(jsonPath("$.content[1].typeMvt").value("SORTIE"));
     }
 
     @Test
     void mvtStkArticle_shouldReturn404_whenArticleNotFound() throws Exception {
-        when(mvtStkService.mvtStkArticle(99L))
+        when(mvtStkService.mvtStkArticle(eq(99L), any(Pageable.class)))
                 .thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"));
 
         mockMvc.perform(get("/mouvements-stock/article/{idArticle}", 99L))

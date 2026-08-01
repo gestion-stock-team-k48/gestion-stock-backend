@@ -14,6 +14,7 @@ import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
 import cm.kfokam.stock.fournisseur.FournisseurService;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
@@ -23,6 +24,8 @@ import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,9 +92,9 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CommandeFournisseurResponse> getAll() {
-        return commandeFournisseurMapper.toResponseList(
-                commandeFournisseurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
+    public Page<CommandeFournisseurResponse> getAll(Pageable pageable) {
+        return commandeFournisseurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId(), pageable)
+                .map(commandeFournisseurMapper::toResponse);
     }
 
     @Override
@@ -121,6 +124,10 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
     @Override
     public void delete(Long id) {
         CommandeFournisseur commandeFournisseur = findCommandeOrThrow(id);
+        if (commandeFournisseur.getEtatCommande() == EtatCommande.LIVREE) {
+            throw new InvalidOperationException(
+                    "Impossible de supprimer une commande fournisseur à l'état LIVREE afin de préserver l'intégrité des mouvements de stock.");
+        }
         commandeFournisseurRepository.delete(commandeFournisseur);
     }
 
@@ -147,7 +154,13 @@ class CommandeFournisseurServiceImpl implements CommandeFournisseurService {
             }
         }
 
-        return commandeFournisseurMapper.toResponse(saved);
+        CommandeFournisseurResponse response = commandeFournisseurMapper.toResponse(saved);
+
+        if (nouvelEtat == EtatCommande.LIVREE || nouvelEtat == EtatCommande.ANNULEE) {
+            emailService.envoyerNotificationEtatCommandeFournisseur(saved.getFournisseur().getEmail(), response);
+        }
+
+        return response;
     }
 
     private List<LigneCommandeFournisseur> buildLignes(List<LigneCommandeFournisseurRequest> requests, CommandeFournisseur commandeFournisseur) {

@@ -3,6 +3,7 @@ package cm.kfokam.stock.utilisateur;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
+import cm.kfokam.stock.utilisateur.dto.UtilisateurMeRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
 import cm.kfokam.stock.utilisateur.model.Role;
@@ -14,6 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -83,6 +87,55 @@ class UtilisateurControllerTest {
                 .build();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+    }
+
+    private UtilisateurMeRequest validMeRequest() {
+        return new UtilisateurMeRequest(
+                "Tchana", "Francky", LocalDate.of(1995, 3, 10), null, "Douala", null, "Cameroun"
+        );
+    }
+
+    @Test
+    void getMine_shouldReturn200_whenAuthenticated() throws Exception {
+        authenticateAsUser(1L);
+        when(utilisateurService.getById(1L)).thenReturn(sampleResponse());
+
+        mockMvc.perform(get("/utilisateurs/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.email").value("francky@kfokam.cm"));
+    }
+
+    @Test
+    void updateMine_shouldReturn200_whenValidRequest() throws Exception {
+        authenticateAsUser(1L);
+        UtilisateurMeRequest request = validMeRequest();
+        UtilisateurResponse response = sampleResponse();
+
+        when(utilisateurService.updateMine(eq(1L), any(UtilisateurMeRequest.class))).thenReturn(response);
+
+        mockMvc.perform(put("/utilisateurs/me")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
+
+        verify(utilisateurService).updateMine(1L, request);
+    }
+
+    @Test
+    void updateMine_shouldReturn400_whenNomIsBlank() throws Exception {
+        authenticateAsUser(1L);
+        UtilisateurMeRequest invalidRequest = new UtilisateurMeRequest(
+                "", "Francky", LocalDate.of(1995, 3, 10), null, "Douala", null, "Cameroun"
+        );
+
+        mockMvc.perform(put("/utilisateurs/me")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+
+        verify(utilisateurService, never()).updateMine(any(), any());
     }
 
     @Test
@@ -180,12 +233,13 @@ class UtilisateurControllerTest {
     @Test
     void getAll_shouldReturn200WithList() throws Exception {
         List<UtilisateurResponse> responses = List.of(sampleResponse());
-        when(utilisateurService.getAll()).thenReturn(responses);
+        Page<UtilisateurResponse> page = new PageImpl<>(responses);
+        when(utilisateurService.getAll(any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/utilisateurs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].email").value("francky@kfokam.cm"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].email").value("francky@kfokam.cm"));
     }
 
     @Test

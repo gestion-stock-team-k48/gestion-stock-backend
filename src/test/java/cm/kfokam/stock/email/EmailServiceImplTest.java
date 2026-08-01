@@ -107,6 +107,28 @@ class EmailServiceImplTest {
     }
 
     @Test
+    void envoyerResetMotDePasse_shouldRenderTemplateAndSend() {
+        when(mailSender.createMimeMessage()).thenReturn(newMimeMessage());
+        when(templateEngine.process(eq("email/reset-password"), any(Context.class)))
+                .thenReturn("<html>reset</html>");
+
+        emailService.envoyerResetMotDePasse("john@doe.com", "some-token", 30L);
+
+        verify(mailSender).send(any(MimeMessage.class));
+    }
+
+    @Test
+    void envoyerResetMotDePasse_shouldNotThrow_whenSmtpUnreachable() {
+        when(mailSender.createMimeMessage()).thenReturn(newMimeMessage());
+        when(templateEngine.process(eq("email/reset-password"), any(Context.class)))
+                .thenReturn("<html>reset</html>");
+        doThrow(new MailSendException("SMTP indisponible")).when(mailSender).send(any(MimeMessage.class));
+
+        assertThatCode(() -> emailService.envoyerResetMotDePasse("john@doe.com", "some-token", 30L))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void envoyerConfirmationCommandeClient_shouldNotSend_whenTemplateRenderingFails() {
         when(templateEngine.process(eq("email/commande-client-confirmation"), any(Context.class)))
                 .thenThrow(new RuntimeException("Template invalide"));

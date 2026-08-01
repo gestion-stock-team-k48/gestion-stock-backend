@@ -1,11 +1,13 @@
 package cm.kfokam.stock.utilisateur;
 
 import cm.kfokam.stock.auth.CurrentUserService;
+import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.storage.FileStorageService;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
+import cm.kfokam.stock.utilisateur.dto.UtilisateurMeRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
 import cm.kfokam.stock.utilisateur.model.Role;
@@ -17,6 +19,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -33,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -60,6 +67,9 @@ class UtilisateurServiceImplTest {
 
     @Mock
     private FileStorageService fileStorageService;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private UtilisateurServiceImpl utilisateurService;
@@ -117,6 +127,21 @@ class UtilisateurServiceImplTest {
     }
 
     @Test
+    void create_shouldSendTemporaryPasswordByEmail() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.existsByEmail("francky@kfokam.cm")).thenReturn(false);
+        when(utilisateurMapper.toEntity(request)).thenReturn(utilisateur);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded-temp-pwd");
+        when(entityManager.getReference(Entreprise.class, ENTREPRISE_ID)).thenReturn(entreprise);
+        when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
+        when(utilisateurMapper.toResponse(utilisateur)).thenReturn(response);
+
+        utilisateurService.create(request);
+
+        verify(emailService).envoyerMotDePasseTemporaire(eq("francky@kfokam.cm"), eq("Francky"), anyString());
+    }
+
+    @Test
     void create_shouldGenerateAndEncodeTemporaryPassword() {
         when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
         when(utilisateurRepository.existsByEmail("francky@kfokam.cm")).thenReturn(false);
@@ -153,7 +178,7 @@ class UtilisateurServiceImplTest {
         when(utilisateurMapper.toResponse(any(Utilisateur.class))).thenReturn(response);
 
         utilisateurService.createInitialAdmin(ENTREPRISE_ID, "Tchana", "Francky", "francky@kfokam.cm",
-                "MyOwnP@ss1", LocalDate.of(1995, 3, 10));
+                "MyOwnP@ss1", LocalDate.of(1995, 3, 10), "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun");
 
         verify(utilisateurRepository).save(argThat(saved ->
                 saved.getMotDePasse().equals("encoded-own-pwd")
@@ -163,11 +188,43 @@ class UtilisateurServiceImplTest {
     }
 
     @Test
+    void createInitialAdmin_shouldSetAdresse_onSavedUtilisateurAndReturnedProfile() {
+        UtilisateurResponse responseWithAdresse = new UtilisateurResponse(
+                1L, "Tchana", "Francky", "francky@kfokam.cm", LocalDate.of(1995, 3, 10),
+                null, "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun",
+                1L, "Kfokam SARL", Set.of(Role.ROLE_ADMIN), false
+        );
+
+        when(utilisateurRepository.existsByEmail("francky@kfokam.cm")).thenReturn(false);
+        when(passwordEncoder.encode("MyOwnP@ss1")).thenReturn("encoded-own-pwd");
+        when(entityManager.getReference(Entreprise.class, ENTREPRISE_ID)).thenReturn(entreprise);
+        when(utilisateurRepository.save(any(Utilisateur.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(utilisateurMapper.toResponse(any(Utilisateur.class))).thenReturn(responseWithAdresse);
+
+        UtilisateurResponse result = utilisateurService.createInitialAdmin(ENTREPRISE_ID, "Tchana", "Francky",
+                "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10),
+                "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun");
+
+        verify(utilisateurRepository).save(argThat(saved ->
+                saved.getAdresse() != null
+                        && "Rue des Manguiers".equals(saved.getAdresse().getAdresse1())
+                        && "Yaoundé".equals(saved.getAdresse().getVille())
+                        && "BP-123".equals(saved.getAdresse().getCodePostal())
+                        && "Cameroun".equals(saved.getAdresse().getPays())
+        ));
+        assertThat(result.rue()).isEqualTo("Rue des Manguiers");
+        assertThat(result.ville()).isEqualTo("Yaoundé");
+        assertThat(result.codePostal()).isEqualTo("BP-123");
+        assertThat(result.pays()).isEqualTo("Cameroun");
+    }
+
+    @Test
     void createInitialAdmin_shouldThrowDuplicateEmailException_whenEmailAlreadyUsed() {
         when(utilisateurRepository.existsByEmail("francky@kfokam.cm")).thenReturn(true);
 
         assertThatThrownBy(() -> utilisateurService.createInitialAdmin(ENTREPRISE_ID, "Tchana", "Francky",
-                "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10)))
+                "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10),
+                "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun"))
                 .isInstanceOf(DuplicateEmailException.class);
 
         verify(utilisateurRepository, never()).save(any());
@@ -195,17 +252,17 @@ class UtilisateurServiceImplTest {
     }
 
     @Test
-    void getAll_shouldReturnListOfResponses() {
+    void getAll_shouldReturnPageOfResponses() {
         when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
-        List<Utilisateur> utilisateurs = List.of(utilisateur);
-        List<UtilisateurResponse> responses = List.of(response);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Utilisateur> utilisateurPage = new PageImpl<>(List.of(utilisateur));
 
-        when(utilisateurRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(utilisateurs);
-        when(utilisateurMapper.toResponseList(utilisateurs)).thenReturn(responses);
+        when(utilisateurRepository.findAllByEntrepriseId(ENTREPRISE_ID, pageable)).thenReturn(utilisateurPage);
+        when(utilisateurMapper.toResponse(utilisateur)).thenReturn(response);
 
-        List<UtilisateurResponse> result = utilisateurService.getAll();
+        Page<UtilisateurResponse> result = utilisateurService.getAll(pageable);
 
-        assertThat(result).containsExactly(response);
+        assertThat(result.getContent()).containsExactly(response);
     }
 
     @Test
@@ -263,6 +320,56 @@ class UtilisateurServiceImplTest {
         assertThatThrownBy(() -> utilisateurService.update(1L, updateRequest))
                 .isInstanceOf(DuplicateEmailException.class)
                 .hasMessageContaining("other@kfokam.cm");
+
+        verify(utilisateurRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMine_shouldReturnUpdatedResponse_whenValid() {
+        UtilisateurMeRequest meRequest = new UtilisateurMeRequest(
+                "Tchana", "Francky", LocalDate.of(1995, 3, 10), null, "Douala", null, "Cameroun"
+        );
+
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(utilisateur));
+        when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
+        when(utilisateurMapper.toResponse(utilisateur)).thenReturn(response);
+
+        UtilisateurResponse result = utilisateurService.updateMine(1L, meRequest);
+
+        assertThat(result).isEqualTo(response);
+        verify(utilisateurMapper).updateEntityFromMeRequest(meRequest, utilisateur);
+    }
+
+    @Test
+    void updateMine_shouldNotTouchPasswordOrRoles() {
+        UtilisateurMeRequest meRequest = new UtilisateurMeRequest(
+                "Tchana", "Francky", LocalDate.of(1995, 3, 10), null, "Douala", null, "Cameroun"
+        );
+
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(utilisateur));
+        when(utilisateurRepository.save(utilisateur)).thenReturn(utilisateur);
+        when(utilisateurMapper.toResponse(utilisateur)).thenReturn(response);
+
+        utilisateurService.updateMine(1L, meRequest);
+
+        verify(passwordEncoder, never()).encode(any());
+        assertThat(utilisateur.getMotDePasse()).isEqualTo("encoded-pwd");
+        assertThat(utilisateur.getRoles()).isEqualTo(Set.of(Role.ROLE_ADMIN));
+    }
+
+    @Test
+    void updateMine_shouldThrowEntityNotFoundException_whenUtilisateurNotFound() {
+        when(currentUserService.getCurrentEntrepriseId()).thenReturn(ENTREPRISE_ID);
+        when(utilisateurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
+
+        UtilisateurMeRequest meRequest = new UtilisateurMeRequest(
+                "Tchana", "Francky", LocalDate.of(1995, 3, 10), null, "Douala", null, "Cameroun"
+        );
+
+        assertThatThrownBy(() -> utilisateurService.updateMine(99L, meRequest))
+                .isInstanceOf(EntityNotFoundException.class);
 
         verify(utilisateurRepository, never()).save(any());
     }
@@ -394,5 +501,28 @@ class UtilisateurServiceImplTest {
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(passwordEncoder, never()).matches(any(), any());
+    }
+
+    @Test
+    void resetPassword_shouldUpdatePasswordAndClearFlag_withoutOldPasswordCheck() {
+        when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(utilisateur));
+        when(passwordEncoder.encode("NewP@ss1!")).thenReturn("new-encoded-pwd");
+
+        utilisateurService.resetPassword(1L, "NewP@ss1!");
+
+        assertThat(utilisateur.getMotDePasse()).isEqualTo("new-encoded-pwd");
+        assertThat(utilisateur.isMustChangePassword()).isFalse();
+        verify(utilisateurRepository).save(utilisateur);
+        verify(passwordEncoder, never()).matches(any(), any());
+    }
+
+    @Test
+    void resetPassword_shouldThrowEntityNotFoundException_whenUtilisateurNotFound() {
+        when(utilisateurRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> utilisateurService.resetPassword(99L, "NewP@ss1!"))
+                .isInstanceOf(EntityNotFoundException.class);
+
+        verify(utilisateurRepository, never()).save(any());
     }
 }

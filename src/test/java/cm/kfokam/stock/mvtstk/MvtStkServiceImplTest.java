@@ -20,6 +20,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -104,7 +108,8 @@ class MvtStkServiceImplTest {
         );
 
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID)).thenReturn(mouvements);
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(mouvements));
 
         BigDecimal result = mvtStkService.stockReelArticle(1L);
 
@@ -114,7 +119,8 @@ class MvtStkServiceImplTest {
     @Test
     void stockReelArticle_shouldReturnZero_whenNoMovements() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID)).thenReturn(List.of());
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of()));
 
         BigDecimal result = mvtStkService.stockReelArticle(1L);
 
@@ -128,31 +134,31 @@ class MvtStkServiceImplTest {
         assertThatThrownBy(() -> mvtStkService.stockReelArticle(99L))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        verify(mvtStkRepository, never()).findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(any(), any());
+        verify(mvtStkRepository, never()).findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(any(), any(), any());
     }
 
     @Test
-    void mvtStkArticle_shouldReturnListOfResponses() {
+    void mvtStkArticle_shouldReturnPageOfResponses() {
+        Pageable pageable = PageRequest.of(0, 20);
         List<MvtStk> mouvements = List.of(mouvement(TypeMvtStk.ENTREE, "10"));
-        List<MvtStkResponse> responses = List.of(response);
 
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID)).thenReturn(mouvements);
-        when(mvtStkMapper.toResponseList(mouvements)).thenReturn(responses);
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, pageable))
+                .thenReturn(new PageImpl<>(mouvements));
 
-        List<MvtStkResponse> result = mvtStkService.mvtStkArticle(1L);
+        Page<MvtStkResponse> result = mvtStkService.mvtStkArticle(1L, pageable);
 
-        assertThat(result).containsExactly(response);
+        assertThat(result.getContent()).containsExactly(response);
     }
 
     @Test
     void mvtStkArticle_shouldThrowEntityNotFoundException_whenArticleNotFound() {
         when(articleService.getById(99L)).thenThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"));
 
-        assertThatThrownBy(() -> mvtStkService.mvtStkArticle(99L))
+        assertThatThrownBy(() -> mvtStkService.mvtStkArticle(99L, Pageable.unpaged()))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        verify(mvtStkRepository, never()).findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(any(), any());
+        verify(mvtStkRepository, never()).findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(any(), any(), any());
     }
 
     @Test
@@ -182,8 +188,8 @@ class MvtStkServiceImplTest {
     @Test
     void sortieStock_shouldCreateMovement_withTypeSortie() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
-                .thenReturn(List.of(mouvement(TypeMvtStk.ENTREE, "10")));
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(mouvement(TypeMvtStk.ENTREE, "10"))));
 
         mvtStkService.sortieStock(request);
 
@@ -193,8 +199,8 @@ class MvtStkServiceImplTest {
     @Test
     void sortieStock_shouldThrowStockInsuffisantException_whenStockTooLow() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
-                .thenReturn(List.of(mouvement(TypeMvtStk.ENTREE, "2")));
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(mouvement(TypeMvtStk.ENTREE, "2"))));
 
         assertThatThrownBy(() -> mvtStkService.sortieStock(request))
                 .isInstanceOf(StockInsuffisantException.class)
@@ -219,8 +225,8 @@ class MvtStkServiceImplTest {
     @Test
     void correctionStockNeg_shouldCreateMovement_withTypeCorrectionNegAndMotif() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
-                .thenReturn(List.of(mouvement(TypeMvtStk.ENTREE, "10")));
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(mouvement(TypeMvtStk.ENTREE, "10"))));
 
         mvtStkService.correctionStockNeg(correctionRequest);
 
@@ -234,8 +240,8 @@ class MvtStkServiceImplTest {
     @Test
     void correctionStockNeg_shouldThrowStockInsuffisantException_whenStockTooLow() {
         when(articleService.getById(1L)).thenReturn(articleResponse);
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
-                .thenReturn(List.of());
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of()));
 
         assertThatThrownBy(() -> mvtStkService.correctionStockNeg(correctionRequest))
                 .isInstanceOf(StockInsuffisantException.class);
@@ -249,11 +255,11 @@ class MvtStkServiceImplTest {
                 new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"),
                 null, new BigDecimal("5"), 1L, "Informatique");
 
-        when(articleService.getAll()).thenReturn(List.of(articleResponse, articleBas));
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID))
-                .thenReturn(List.of(mouvement(TypeMvtStk.ENTREE, "50")));
-        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(2L, ENTREPRISE_ID))
-                .thenReturn(List.of());
+        when(articleService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(articleResponse, articleBas)));
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(mouvement(TypeMvtStk.ENTREE, "50"))));
+        when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(2L, ENTREPRISE_ID, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of()));
 
         List<AlerteStockResponse> result = mvtStkService.articlesEnAlerte();
 

@@ -1,5 +1,6 @@
 package cm.kfokam.stock.utilisateur;
 
+import cm.kfokam.stock.utilisateur.dto.UtilisateurMeRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
 import cm.kfokam.stock.utilisateur.model.Utilisateur;
@@ -41,4 +42,17 @@ interface UtilisateurMapper {
     @Mapping(target = "adresse.codePostal", source = "codePostal")
     @Mapping(target = "adresse.pays", source = "pays")
     void updateEntityFromRequest(UtilisateurRequest request, @MappingTarget Utilisateur utilisateur);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "motDePasse", ignore = true)
+    @Mapping(target = "mustChangePassword", ignore = true)
+    @Mapping(target = "entreprise", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "photo", ignore = true)
+    @Mapping(target = "adresse.adresse1", source = "rue")
+    @Mapping(target = "adresse.ville", source = "ville")
+    @Mapping(target = "adresse.codePostal", source = "codePostal")
+    @Mapping(target = "adresse.pays", source = "pays")
+    void updateEntityFromMeRequest(UtilisateurMeRequest request, @MappingTarget Utilisateur utilisateur);
 }

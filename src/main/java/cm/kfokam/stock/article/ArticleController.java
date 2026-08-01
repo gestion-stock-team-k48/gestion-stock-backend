@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +26,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/articles")
@@ -73,8 +73,8 @@ public class ArticleController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<List<ArticleResponse>> getAll() {
-        return ResponseEntity.ok(articleService.getAll());
+    public ResponseEntity<Page<ArticleResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(articleService.getAll(pageable));
     }
 
     @Operation(summary = "Modifier un article", description = "Met à jour les informations d'un article existant")
@@ -113,7 +113,7 @@ public class ArticleController {
 
     @Operation(summary = "Supprimer un article", description = "Supprime définitivement un article du catalogue")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Article supprimé"),
+            @ApiResponse(responseCode = "204", description = "Article supprimé"),
             @ApiResponse(responseCode = "401", description = "Non authentifié"),
             @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
             @ApiResponse(responseCode = "404", description = "Article introuvable"),
@@ -121,9 +121,9 @@ public class ArticleController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> delete(
+    public ResponseEntity<Void> delete(
             @Parameter(description = "Identifiant de l'article", example = "1") @PathVariable Long id) {
         articleService.delete(id);
-        return ResponseEntity.ok(Map.of("message", "Article supprimé avec succès."));
+        return ResponseEntity.noContent().build();
     }
 }

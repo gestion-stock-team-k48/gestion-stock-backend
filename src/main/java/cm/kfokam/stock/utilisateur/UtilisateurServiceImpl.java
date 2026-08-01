@@ -1,11 +1,14 @@
 package cm.kfokam.stock.utilisateur;
 
 import cm.kfokam.stock.auth.CurrentUserService;
+import cm.kfokam.stock.common.entity.Adresse;
+import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.storage.FileStorageService;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
+import cm.kfokam.stock.utilisateur.dto.UtilisateurMeRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
 import cm.kfokam.stock.utilisateur.model.Role;
@@ -14,6 +17,8 @@ import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -24,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -43,6 +47,7 @@ class UtilisateurServiceImpl implements UtilisateurService {
     private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
     private final FileStorageService fileStorageService;
+    private final EmailService emailService;
 
     @Bean
     UserDetailsService userDetailsService() {
@@ -66,14 +71,16 @@ class UtilisateurServiceImpl implements UtilisateurService {
 
         Utilisateur saved = utilisateurRepository.save(utilisateur);
 
-        log.info("Mot de passe temporaire pour {} : {}", saved.getEmail(), temporaryPassword);
+        log.info("Utilisateur créé ({}), email de bienvenue envoyé avec le mot de passe temporaire", saved.getEmail());
+        emailService.envoyerMotDePasseTemporaire(saved.getEmail(), saved.getPrenom(), temporaryPassword);
 
         return utilisateurMapper.toResponse(saved);
     }
 
     @Override
     public UtilisateurResponse createInitialAdmin(Long entrepriseId, String nom, String prenom, String email,
-                                                    String rawPassword, LocalDate dateDeNaissance) {
+                                                    String rawPassword, LocalDate dateDeNaissance,
+                                                    String rue, String ville, String codePostal, String pays) {
         if (utilisateurRepository.existsByEmail(email)) {
             throw new DuplicateEmailException("L'email '%s' est déjà utilisé".formatted(email));
         }
@@ -84,6 +91,7 @@ class UtilisateurServiceImpl implements UtilisateurService {
                 .email(email)
                 .motDePasse(passwordEncoder.encode(rawPassword))
                 .dateDeNaissance(dateDeNaissance)
+                .adresse(Adresse.builder().adresse1(rue).ville(ville).codePostal(codePostal).pays(pays).build())
                 .entreprise(entityManager.getReference(Entreprise.class, entrepriseId))
                 .roles(Set.of(Role.ROLE_ADMIN))
                 .mustChangePassword(false)
@@ -100,9 +108,9 @@ class UtilisateurServiceImpl implements UtilisateurService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UtilisateurResponse> getAll() {
-        return utilisateurMapper.toResponseList(
-                utilisateurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
+    public Page<UtilisateurResponse> getAll(Pageable pageable) {
+        return utilisateurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId(), pageable)
+                .map(utilisateurMapper::toResponse);
     }
 
     @Override
@@ -117,6 +125,15 @@ class UtilisateurServiceImpl implements UtilisateurService {
 
         // entreprise is fixed at creation and never reassigned via update — a user belongs to exactly one tenant.
         utilisateurMapper.updateEntityFromRequest(request, utilisateur);
+
+        return utilisateurMapper.toResponse(utilisateurRepository.save(utilisateur));
+    }
+
+    @Override
+    public UtilisateurResponse updateMine(Long id, UtilisateurMeRequest request) {
+        Utilisateur utilisateur = findUtilisateurOrThrow(id);
+
+        utilisateurMapper.updateEntityFromMeRequest(request, utilisateur);
 
         return utilisateurMapper.toResponse(utilisateurRepository.save(utilisateur));
     }
@@ -161,6 +178,16 @@ class UtilisateurServiceImpl implements UtilisateurService {
         }
 
         utilisateur.setMotDePasse(passwordEncoder.encode(request.newPassword()));
+        utilisateur.setMustChangePassword(false);
+        utilisateurRepository.save(utilisateur);
+    }
+
+    @Override
+    public void resetPassword(Long utilisateurId, String newRawPassword) {
+        Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
+                .orElseThrow(() -> new EntityNotFoundException("Utilisateur introuvable avec l'id : " + utilisateurId));
+
+        utilisateur.setMotDePasse(passwordEncoder.encode(newRawPassword));
         utilisateur.setMustChangePassword(false);
         utilisateurRepository.save(utilisateur);
     }

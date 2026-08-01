@@ -1,11 +1,12 @@
 package cm.kfokam.stock.article;
 
 import cm.kfokam.stock.article.model.Article;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 interface ArticleRepository extends JpaRepository<Article, Long> {
@@ -16,7 +17,7 @@ interface ArticleRepository extends JpaRepository<Article, Long> {
 
     Optional<Article> findByIdAndEntrepriseId(Long id, Long entrepriseId);
 
-    List<Article> findAllByEntrepriseId(Long entrepriseId);
+    Page<Article> findAllByEntrepriseId(Long entrepriseId, Pageable pageable);
 
     // LigneCommandeClient, LigneCommandeFournisseur, LigneVente et MvtStk sont des entités
     // publiques d'autres modules : les référencer en JPQL ici ne viole pas l'encapsulation des

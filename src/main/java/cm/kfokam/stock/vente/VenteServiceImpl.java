@@ -6,6 +6,7 @@ import cm.kfokam.stock.article.model.Article;
 import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.mvtstk.MvtStkService;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
@@ -16,6 +17,8 @@ import cm.kfokam.stock.vente.model.LigneVente;
 import cm.kfokam.stock.vente.model.Vente;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,14 +83,16 @@ class VenteServiceImpl implements VenteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<VenteResponse> getAll() {
-        return venteMapper.toResponseList(venteRepository.findAllByIdEntreprise(currentUserService.getCurrentEntrepriseId()));
+    public Page<VenteResponse> getAll(Pageable pageable) {
+        return venteRepository.findAllByIdEntreprise(currentUserService.getCurrentEntrepriseId(), pageable)
+                .map(venteMapper::toResponse);
     }
 
     @Override
     public void delete(Long id) {
-        Vente vente = findVenteOrThrow(id);
-        venteRepository.delete(vente);
+        findVenteOrThrow(id);
+        throw new InvalidOperationException(
+                "Impossible de supprimer une vente existante afin de préserver l'intégrité des mouvements de stock.");
     }
 
     private List<LigneVente> buildLignes(List<LigneVenteRequest> requests, Vente vente) {
