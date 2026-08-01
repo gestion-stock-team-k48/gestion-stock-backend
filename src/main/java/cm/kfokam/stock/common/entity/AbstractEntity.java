@@ -30,7 +30,7 @@ public abstract class AbstractEntity {
     private Instant createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at", insertable = false)
+    @Column(name = "updated_at")
     private Instant updatedAt;
 
     @CreatedBy
@@ -38,6 +38,6 @@ public abstract class AbstractEntity {
     private String createdBy;
 
     @LastModifiedBy
-    @Column(name = "updated_by", insertable = false)
+    @Column(name = "updated_by")
     private String updatedBy;
 }

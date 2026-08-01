@@ -15,6 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -126,16 +130,16 @@ class FournisseurServiceImplTest {
     }
 
     @Test
-    void getAll_shouldReturnListOfResponses() {
-        List<Fournisseur> fournisseurs = List.of(fournisseur);
-        List<FournisseurResponse> responses = List.of(response);
+    void getAll_shouldReturnPageOfResponses() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Fournisseur> fournisseurPage = new PageImpl<>(List.of(fournisseur));
 
-        when(fournisseurRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(fournisseurs);
-        when(fournisseurMapper.toResponseList(fournisseurs)).thenReturn(responses);
+        when(fournisseurRepository.findAllByEntrepriseId(ENTREPRISE_ID, pageable)).thenReturn(fournisseurPage);
+        when(fournisseurMapper.toResponse(fournisseur)).thenReturn(response);
 
-        List<FournisseurResponse> result = fournisseurService.getAll();
+        Page<FournisseurResponse> result = fournisseurService.getAll(pageable);
 
-        assertThat(result).containsExactly(response);
+        assertThat(result.getContent()).containsExactly(response);
     }
 
     @Test

@@ -65,6 +65,8 @@ application:
       expiration: 86400000 # 1 jour en millisecondes
       refresh-token:
         expiration: 604800000 # 7 jours en millisecondes
+    reset-token:
+      expiration-minutes: 30
   mail:
     from: gestion.stock.notif@gmail.com
     from-name: Gestion Stock

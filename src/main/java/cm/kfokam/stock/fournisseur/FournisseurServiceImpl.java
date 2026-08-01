@@ -10,11 +10,11 @@ import cm.kfokam.stock.fournisseur.model.Fournisseur;
 import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -49,9 +49,9 @@ class FournisseurServiceImpl implements FournisseurService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FournisseurResponse> getAll() {
-        return fournisseurMapper.toResponseList(
-                fournisseurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
+    public Page<FournisseurResponse> getAll(Pageable pageable) {
+        return fournisseurRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId(), pageable)
+                .map(fournisseurMapper::toResponse);
     }
 
     @Override

@@ -10,6 +10,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -71,8 +74,8 @@ public class CommandeFournisseurController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<List<CommandeFournisseurResponse>> getAll() {
-        return ResponseEntity.ok(commandeFournisseurService.getAll());
+    public ResponseEntity<Page<CommandeFournisseurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(commandeFournisseurService.getAll(pageable));
     }
 
     @Operation(summary = "Historique des commandes d'un fournisseur", description = "Retourne toutes les commandes passées auprès d'un fournisseur donné")
@@ -111,7 +114,8 @@ public class CommandeFournisseurController {
             @ApiResponse(responseCode = "204", description = "Commande supprimée"),
             @ApiResponse(responseCode = "401", description = "Non authentifié"),
             @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Commande introuvable")
+            @ApiResponse(responseCode = "404", description = "Commande introuvable"),
+            @ApiResponse(responseCode = "409", description = "Suppression interdite : la commande est à l'état LIVREE")
     })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")

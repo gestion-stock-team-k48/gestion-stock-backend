@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -53,16 +55,16 @@ class DashboardServiceImplTest {
         VenteResponse venteAncienne = new VenteResponse(2L, "VT-0002", moisPasse, null, 1L, List.of(
                 new LigneVenteResponse(3L, 10L, "Article 1", new BigDecimal("2"), new BigDecimal("100.00"))
         ));
-        when(venteService.getAll()).thenReturn(List.of(venteRecente, venteAncienne));
+        when(venteService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(venteRecente, venteAncienne)));
 
         CommandeClientResponse ccEnPreparation = commandeClient(EtatCommande.EN_PREPARATION);
         CommandeClientResponse ccValidee = commandeClient(EtatCommande.VALIDEE);
         CommandeClientResponse ccLivree = commandeClient(EtatCommande.LIVREE);
-        when(commandeClientService.getAll()).thenReturn(List.of(ccEnPreparation, ccValidee, ccLivree));
+        when(commandeClientService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(ccEnPreparation, ccValidee, ccLivree)));
 
         CommandeFournisseurResponse cfValidee = commandeFournisseur(cm.kfokam.stock.commandefournisseur.model.EtatCommande.VALIDEE);
         CommandeFournisseurResponse cfLivree = commandeFournisseur(cm.kfokam.stock.commandefournisseur.model.EtatCommande.LIVREE);
-        when(commandeFournisseurService.getAll()).thenReturn(List.of(cfValidee, cfLivree));
+        when(commandeFournisseurService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(cfValidee, cfLivree)));
 
         DashboardStatsResponse result = dashboardService.getStatistiques();
 
@@ -82,9 +84,9 @@ class DashboardServiceImplTest {
 
     @Test
     void getStatistiques_shouldReturnZeroesAndEmptyTop_whenNoVentes() {
-        when(venteService.getAll()).thenReturn(List.of());
-        when(commandeClientService.getAll()).thenReturn(List.of());
-        when(commandeFournisseurService.getAll()).thenReturn(List.of());
+        when(venteService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of()));
+        when(commandeClientService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of()));
+        when(commandeFournisseurService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of()));
 
         DashboardStatsResponse result = dashboardService.getStatistiques();
 

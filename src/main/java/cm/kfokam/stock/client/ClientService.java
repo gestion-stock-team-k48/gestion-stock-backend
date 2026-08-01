@@ -2,9 +2,9 @@ package cm.kfokam.stock.client;
 
 import cm.kfokam.stock.client.dto.ClientRequest;
 import cm.kfokam.stock.client.dto.ClientResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 public interface ClientService {
 
@@ -12,7 +12,7 @@ public interface ClientService {
 
     ClientResponse getById(Long id);
 
-    List<ClientResponse> getAll();
+    Page<ClientResponse> getAll(Pageable pageable);
 
     ClientResponse update(Long id, ClientRequest request);
 

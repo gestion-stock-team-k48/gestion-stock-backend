@@ -11,6 +11,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -99,9 +102,10 @@ public class MvtStkController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/article/{idArticle}")
-    public ResponseEntity<List<MvtStkResponse>> mvtStkArticle(
-            @Parameter(description = "Identifiant de l'article", example = "1") @PathVariable Long idArticle) {
-        return ResponseEntity.ok(mvtStkService.mvtStkArticle(idArticle));
+    public ResponseEntity<Page<MvtStkResponse>> mvtStkArticle(
+            @Parameter(description = "Identifiant de l'article", example = "1") @PathVariable Long idArticle,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(mvtStkService.mvtStkArticle(idArticle, pageable));
     }
 
     @Operation(summary = "Stock réel d'un article", description = "Calcule la quantité en stock réelle d'un article à partir de ses mouvements")

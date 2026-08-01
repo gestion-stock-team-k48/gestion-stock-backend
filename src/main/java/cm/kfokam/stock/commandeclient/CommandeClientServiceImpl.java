@@ -17,12 +17,15 @@ import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
 import cm.kfokam.stock.mvtstk.MvtStkService;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,9 +92,9 @@ class CommandeClientServiceImpl implements CommandeClientService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CommandeClientResponse> getAll() {
-        return commandeClientMapper.toResponseList(
-                commandeClientRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
+    public Page<CommandeClientResponse> getAll(Pageable pageable) {
+        return commandeClientRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId(), pageable)
+                .map(commandeClientMapper::toResponse);
     }
 
     @Override
@@ -121,6 +124,10 @@ class CommandeClientServiceImpl implements CommandeClientService {
     @Override
     public void delete(Long id) {
         CommandeClient commandeClient = findCommandeOrThrow(id);
+        if (commandeClient.getEtatCommande() == EtatCommande.LIVREE) {
+            throw new InvalidOperationException(
+                    "Impossible de supprimer une commande client à l'état LIVREE afin de préserver l'intégrité des mouvements de stock.");
+        }
         commandeClientRepository.delete(commandeClient);
     }
 
@@ -147,7 +154,13 @@ class CommandeClientServiceImpl implements CommandeClientService {
             }
         }
 
-        return commandeClientMapper.toResponse(saved);
+        CommandeClientResponse response = commandeClientMapper.toResponse(saved);
+
+        if (nouvelEtat == EtatCommande.LIVREE || nouvelEtat == EtatCommande.ANNULEE) {
+            emailService.envoyerNotificationEtatCommandeClient(saved.getClient().getEmail(), response);
+        }
+
+        return response;
     }
 
     private List<LigneCommandeClient> buildLignes(List<LigneCommandeClientRequest> requests, CommandeClient commandeClient) {

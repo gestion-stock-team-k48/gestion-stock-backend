@@ -2,7 +2,9 @@ package cm.kfokam.stock.auth;
 
 import cm.kfokam.stock.auth.dto.AuthenticationRequest;
 import cm.kfokam.stock.auth.dto.AuthenticationResponse;
+import cm.kfokam.stock.auth.dto.ForgotPasswordRequest;
 import cm.kfokam.stock.auth.dto.RegisterRequest;
+import cm.kfokam.stock.auth.dto.ResetPasswordRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -57,5 +59,28 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+    }
+
+    @Operation(summary = "Mot de passe oublié", description = "Envoie un code de réinitialisation par email si le compte existe (la réponse ne révèle jamais si l'email est connu ou non)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Requête traitée"),
+            @ApiResponse(responseCode = "400", description = "Requête invalide")
+    })
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Réinitialiser le mot de passe", description = "Définit un nouveau mot de passe à partir d'un code de réinitialisation valide et non expiré")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Mot de passe réinitialisé"),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "401", description = "Code de réinitialisation invalide ou expiré")
+    })
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 }

@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -139,13 +142,14 @@ class FournisseurControllerTest {
                 new FournisseurResponse(2L, "Njoya", "Aissatou", "aissatou@example.com", null,
                         null, "Yaoundé", null, "Cameroun", null)
         );
-        when(fournisseurService.getAll()).thenReturn(responses);
+        Page<FournisseurResponse> page = new PageImpl<>(responses);
+        when(fournisseurService.getAll(any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/fournisseurs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].email").value("paul@example.com"))
-                .andExpect(jsonPath("$[1].email").value("aissatou@example.com"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].email").value("paul@example.com"))
+                .andExpect(jsonPath("$.content[1].email").value("aissatou@example.com"));
     }
 
     @Test

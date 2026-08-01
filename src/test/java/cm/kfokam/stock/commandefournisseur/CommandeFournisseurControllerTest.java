@@ -8,6 +8,7 @@ import cm.kfokam.stock.commandefournisseur.dto.LigneCommandeFournisseurResponse;
 import cm.kfokam.stock.commandefournisseur.model.EtatCommande;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -164,12 +168,13 @@ class CommandeFournisseurControllerTest {
     @Test
     void getAll_shouldReturn200WithList() throws Exception {
         List<CommandeFournisseurResponse> responses = List.of(sampleResponse());
-        when(commandeFournisseurService.getAll()).thenReturn(responses);
+        Page<CommandeFournisseurResponse> page = new PageImpl<>(responses);
+        when(commandeFournisseurService.getAll(any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/commandes-fournisseur"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].codeCommande").value("CF-2026-0001"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].codeCommande").value("CF-2026-0001"));
     }
 
     @Test
@@ -235,6 +240,16 @@ class CommandeFournisseurControllerTest {
 
         mockMvc.perform(delete("/commandes-fournisseur/{id}", 99L))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void delete_shouldReturn409_whenCommandeIsLivree() throws Exception {
+        org.mockito.Mockito.doThrow(new InvalidOperationException(
+                        "Impossible de supprimer une commande fournisseur à l'état LIVREE afin de préserver l'intégrité des mouvements de stock."))
+                .when(commandeFournisseurService).delete(1L);
+
+        mockMvc.perform(delete("/commandes-fournisseur/{id}", 1L))
+                .andExpect(status().isConflict());
     }
 
     @Test

@@ -2,9 +2,9 @@ package cm.kfokam.stock.article;
 
 import cm.kfokam.stock.article.dto.ArticleRequest;
 import cm.kfokam.stock.article.dto.ArticleResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 public interface ArticleService {
 
@@ -12,7 +12,7 @@ public interface ArticleService {
 
     ArticleResponse getById(Long id);
 
-    List<ArticleResponse> getAll();
+    Page<ArticleResponse> getAll(Pageable pageable);
 
     ArticleResponse update(Long id, ArticleRequest request);
 

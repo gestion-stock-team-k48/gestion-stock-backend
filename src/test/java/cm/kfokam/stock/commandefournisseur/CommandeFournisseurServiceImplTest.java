@@ -14,6 +14,7 @@ import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
 import cm.kfokam.stock.fournisseur.FournisseurService;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
@@ -28,6 +29,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -299,16 +304,16 @@ class CommandeFournisseurServiceImplTest {
     }
 
     @Test
-    void getAll_shouldReturnListOfResponses() {
-        List<CommandeFournisseur> commandes = List.of(commandeFournisseur);
-        List<CommandeFournisseurResponse> responses = List.of(response);
+    void getAll_shouldReturnPageOfResponses() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<CommandeFournisseur> commandePage = new PageImpl<>(List.of(commandeFournisseur));
 
-        when(commandeFournisseurRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(commandes);
-        when(commandeFournisseurMapper.toResponseList(commandes)).thenReturn(responses);
+        when(commandeFournisseurRepository.findAllByEntrepriseId(ENTREPRISE_ID, pageable)).thenReturn(commandePage);
+        when(commandeFournisseurMapper.toResponse(commandeFournisseur)).thenReturn(response);
 
-        List<CommandeFournisseurResponse> result = commandeFournisseurService.getAll();
+        Page<CommandeFournisseurResponse> result = commandeFournisseurService.getAll(pageable);
 
-        assertThat(result).containsExactly(response);
+        assertThat(result.getContent()).containsExactly(response);
     }
 
     @Test
@@ -381,12 +386,24 @@ class CommandeFournisseurServiceImplTest {
     }
 
     @Test
-    void delete_shouldDeleteCommande_whenFound() {
+    void delete_shouldDeleteCommande_whenFoundAndNotLivree() {
         when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
 
         commandeFournisseurService.delete(1L);
 
         verify(commandeFournisseurRepository, times(1)).delete(commandeFournisseur);
+    }
+
+    @Test
+    void delete_shouldThrowInvalidOperationException_whenCommandeIsLivree() {
+        commandeFournisseur.setEtatCommande(EtatCommande.LIVREE);
+        when(commandeFournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeFournisseur));
+
+        assertThatThrownBy(() -> commandeFournisseurService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Impossible de supprimer une commande fournisseur à l'état LIVREE afin de préserver l'intégrité des mouvements de stock.");
+
+        verify(commandeFournisseurRepository, never()).delete(any());
     }
 
     @Test

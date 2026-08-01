@@ -14,6 +14,8 @@ import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import cm.kfokam.stock.mvtstk.model.TypeMvtStk;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +46,7 @@ class MvtStkServiceImpl implements MvtStkService {
     public List<AlerteStockResponse> articlesEnAlerte() {
         Long idEntreprise = currentUserService.getCurrentEntrepriseId();
 
-        return articleService.getAll().stream()
+        return articleService.getAll(Pageable.unpaged()).stream()
                 .map(article -> new AlerteStockResponse(
                         article.id(), article.code(), article.designation(),
                         calculerStockReel(article.id(), idEntreprise), article.seuilMinimum()))
@@ -54,12 +56,12 @@ class MvtStkServiceImpl implements MvtStkService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MvtStkResponse> mvtStkArticle(Long idArticle) {
+    public Page<MvtStkResponse> mvtStkArticle(Long idArticle, Pageable pageable) {
         articleService.getById(idArticle);
         Long idEntreprise = currentUserService.getCurrentEntrepriseId();
 
-        return mvtStkMapper.toResponseList(
-                mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(idArticle, idEntreprise));
+        return mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(idArticle, idEntreprise, pageable)
+                .map(mvtStkMapper::toResponse);
     }
 
     @Override
@@ -112,7 +114,7 @@ class MvtStkServiceImpl implements MvtStkService {
     }
 
     private BigDecimal calculerStockReel(Long idArticle, Long idEntreprise) {
-        return mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(idArticle, idEntreprise).stream()
+        return mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(idArticle, idEntreprise, Pageable.unpaged()).stream()
                 .map(this::quantiteSignee)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

@@ -2,9 +2,9 @@ package cm.kfokam.stock.fournisseur;
 
 import cm.kfokam.stock.fournisseur.dto.FournisseurRequest;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 public interface FournisseurService {
 
@@ -12,7 +12,7 @@ public interface FournisseurService {
 
     FournisseurResponse getById(Long id);
 
-    List<FournisseurResponse> getAll();
+    Page<FournisseurResponse> getAll(Pageable pageable);
 
     FournisseurResponse update(Long id, FournisseurRequest request);
 

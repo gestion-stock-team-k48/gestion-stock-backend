@@ -5,6 +5,7 @@ import cm.kfokam.stock.article.dto.ArticleResponse;
 import cm.kfokam.stock.article.model.Article;
 import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.mvtstk.MvtStkService;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
@@ -268,12 +269,14 @@ class VenteServiceImplTest {
     // ------------------------------------------------------------------
 
     @Test
-    void delete_shouldDeleteVente_whenFound() {
+    void delete_shouldThrowInvalidOperationException_toPreserveStockIntegrity() {
         when(venteRepository.findByIdAndIdEntreprise(1L, ENTREPRISE_ID)).thenReturn(Optional.of(vente));
 
-        venteService.delete(1L);
+        assertThatThrownBy(() -> venteService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Impossible de supprimer une vente existante afin de préserver l'intégrité des mouvements de stock.");
 
-        verify(venteRepository, times(1)).delete(vente);
+        verify(venteRepository, never()).delete(any());
     }
 
     @Test

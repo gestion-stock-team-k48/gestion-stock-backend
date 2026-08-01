@@ -17,6 +17,7 @@ import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.exception.InvalidStateTransitionException;
 import cm.kfokam.stock.mvtstk.MvtStkService;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
@@ -28,6 +29,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -299,16 +304,16 @@ class CommandeClientServiceImplTest {
     }
 
     @Test
-    void getAll_shouldReturnListOfResponses() {
-        List<CommandeClient> commandes = List.of(commandeClient);
-        List<CommandeClientResponse> responses = List.of(response);
+    void getAll_shouldReturnPageOfResponses() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<CommandeClient> commandePage = new PageImpl<>(List.of(commandeClient));
 
-        when(commandeClientRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(commandes);
-        when(commandeClientMapper.toResponseList(commandes)).thenReturn(responses);
+        when(commandeClientRepository.findAllByEntrepriseId(ENTREPRISE_ID, pageable)).thenReturn(commandePage);
+        when(commandeClientMapper.toResponse(commandeClient)).thenReturn(response);
 
-        List<CommandeClientResponse> result = commandeClientService.getAll();
+        Page<CommandeClientResponse> result = commandeClientService.getAll(pageable);
 
-        assertThat(result).containsExactly(response);
+        assertThat(result.getContent()).containsExactly(response);
     }
 
     @Test
@@ -381,12 +386,24 @@ class CommandeClientServiceImplTest {
     }
 
     @Test
-    void delete_shouldDeleteCommande_whenFound() {
+    void delete_shouldDeleteCommande_whenFoundAndNotLivree() {
         when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
 
         commandeClientService.delete(1L);
 
         verify(commandeClientRepository, times(1)).delete(commandeClient);
+    }
+
+    @Test
+    void delete_shouldThrowInvalidOperationException_whenCommandeIsLivree() {
+        commandeClient.setEtatCommande(EtatCommande.LIVREE);
+        when(commandeClientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(commandeClient));
+
+        assertThatThrownBy(() -> commandeClientService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Impossible de supprimer une commande client à l'état LIVREE afin de préserver l'intégrité des mouvements de stock.");
+
+        verify(commandeClientRepository, never()).delete(any());
     }
 
     @Test

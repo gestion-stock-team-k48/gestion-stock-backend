@@ -2,7 +2,9 @@ package cm.kfokam.stock.auth;
 
 import cm.kfokam.stock.auth.dto.AuthenticationRequest;
 import cm.kfokam.stock.auth.dto.AuthenticationResponse;
+import cm.kfokam.stock.auth.dto.ForgotPasswordRequest;
 import cm.kfokam.stock.auth.dto.RegisterRequest;
+import cm.kfokam.stock.auth.dto.ResetPasswordRequest;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.InvalidTokenException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -98,7 +102,8 @@ class AuthControllerTest {
         return new RegisterRequest(
                 "Kfokam SARL", "Gestion de stock", null, "Douala", null, "Cameroun",
                 "CF-001", "contact@kfokam.cm", "+237600000000", "https://kfokam.cm",
-                "Tchana", "Francky", "francky@kfokam.cm", "P@ssw0rd!", LocalDate.of(1995, 3, 10)
+                "Tchana", "Francky", "francky@kfokam.cm", "P@ssw0rd!", LocalDate.of(1995, 3, 10),
+                "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun"
         );
     }
 
@@ -128,5 +133,66 @@ class AuthControllerTest {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void forgotPassword_shouldReturn200_whenValidRequest() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest("francky@kfokam.cm");
+
+        mockMvc.perform(post("/auth/forgot-password")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        verify(authService).forgotPassword("francky@kfokam.cm");
+    }
+
+    @Test
+    void forgotPassword_shouldReturn400_whenEmailIsInvalid() throws Exception {
+        ForgotPasswordRequest invalidRequest = new ForgotPasswordRequest("not-an-email");
+
+        mockMvc.perform(post("/auth/forgot-password")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+
+        verify(authService, never()).forgotPassword(any());
+    }
+
+    @Test
+    void resetPassword_shouldReturn204_whenValid() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest("valid-token", "NewP@ss1!");
+
+        mockMvc.perform(post("/auth/reset-password")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        verify(authService).resetPassword("valid-token", "NewP@ss1!");
+    }
+
+    @Test
+    void resetPassword_shouldReturn400_whenNewPasswordTooShort() throws Exception {
+        ResetPasswordRequest invalidRequest = new ResetPasswordRequest("valid-token", "short");
+
+        mockMvc.perform(post("/auth/reset-password")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+
+        verify(authService, never()).resetPassword(any(), any());
+    }
+
+    @Test
+    void resetPassword_shouldReturn401_whenTokenInvalidOrExpired() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest("bad-token", "NewP@ss1!");
+
+        org.mockito.Mockito.doThrow(new InvalidTokenException("Le code de réinitialisation est invalide ou a expiré"))
+                .when(authService).resetPassword("bad-token", "NewP@ss1!");
+
+        mockMvc.perform(post("/auth/reset-password")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
     }
 }

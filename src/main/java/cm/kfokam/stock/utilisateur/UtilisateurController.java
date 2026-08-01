@@ -1,6 +1,7 @@
 package cm.kfokam.stock.utilisateur;
 
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
+import cm.kfokam.stock.utilisateur.dto.UtilisateurMeRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurResponse;
 import cm.kfokam.stock.utilisateur.model.Utilisateur;
@@ -11,6 +12,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +31,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/utilisateurs")
 @RequiredArgsConstructor
@@ -37,6 +39,30 @@ import java.util.List;
 public class UtilisateurController {
 
     private final UtilisateurService utilisateurService;
+
+    @Operation(summary = "Récupérer mon profil", description = "Retourne les informations de l'utilisateur authentifié")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profil trouvé"),
+            @ApiResponse(responseCode = "401", description = "Non authentifié")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @GetMapping("/me")
+    public ResponseEntity<UtilisateurResponse> getMine(@AuthenticationPrincipal Utilisateur utilisateur) {
+        return ResponseEntity.ok(utilisateurService.getById(utilisateur.getId()));
+    }
+
+    @Operation(summary = "Modifier mon profil", description = "Met à jour les informations personnelles de l'utilisateur authentifié (nom, prénom, adresse, date de naissance)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profil mis à jour"),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "401", description = "Non authentifié")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PutMapping("/me")
+    public ResponseEntity<UtilisateurResponse> updateMine(@AuthenticationPrincipal Utilisateur utilisateur,
+                                                            @Valid @RequestBody UtilisateurMeRequest request) {
+        return ResponseEntity.ok(utilisateurService.updateMine(utilisateur.getId(), request));
+    }
 
     @Operation(summary = "Créer un utilisateur", description = "Ajoute un nouvel utilisateur pour l'entreprise courante")
     @ApiResponses({
@@ -72,8 +98,8 @@ public class UtilisateurController {
             @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
     })
     @GetMapping
-    public ResponseEntity<List<UtilisateurResponse>> getAll() {
-        return ResponseEntity.ok(utilisateurService.getAll());
+    public ResponseEntity<Page<UtilisateurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(utilisateurService.getAll(pageable));
     }
 
     @Operation(summary = "Modifier un utilisateur", description = "Met à jour les informations d'un utilisateur existant")

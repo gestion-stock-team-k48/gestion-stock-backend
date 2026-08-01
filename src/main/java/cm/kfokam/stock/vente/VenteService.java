@@ -2,8 +2,8 @@ package cm.kfokam.stock.vente;
 
 import cm.kfokam.stock.vente.dto.VenteRequest;
 import cm.kfokam.stock.vente.dto.VenteResponse;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface VenteService {
 
@@ -13,7 +13,7 @@ public interface VenteService {
 
     VenteResponse getByCode(String code);
 
-    List<VenteResponse> getAll();
+    Page<VenteResponse> getAll(Pageable pageable);
 
     void delete(Long id);
 }

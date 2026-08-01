@@ -15,6 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -126,16 +130,16 @@ class ClientServiceImplTest {
     }
 
     @Test
-    void getAll_shouldReturnListOfResponses() {
-        List<Client> clients = List.of(client);
-        List<ClientResponse> responses = List.of(response);
+    void getAll_shouldReturnPageOfResponses() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Client> clientPage = new PageImpl<>(List.of(client));
 
-        when(clientRepository.findAllByEntrepriseId(ENTREPRISE_ID)).thenReturn(clients);
-        when(clientMapper.toResponseList(clients)).thenReturn(responses);
+        when(clientRepository.findAllByEntrepriseId(ENTREPRISE_ID, pageable)).thenReturn(clientPage);
+        when(clientMapper.toResponse(client)).thenReturn(response);
 
-        List<ClientResponse> result = clientService.getAll();
+        Page<ClientResponse> result = clientService.getAll(pageable);
 
-        assertThat(result).containsExactly(response);
+        assertThat(result.getContent()).containsExactly(response);
     }
 
     @Test

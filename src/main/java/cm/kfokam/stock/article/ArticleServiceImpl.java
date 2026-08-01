@@ -14,11 +14,11 @@ import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -58,9 +58,9 @@ class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ArticleResponse> getAll() {
-        return articleMapper.toResponseList(
-                articleRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId()));
+    public Page<ArticleResponse> getAll(Pageable pageable) {
+        return articleRepository.findAllByEntrepriseId(currentUserService.getCurrentEntrepriseId(), pageable)
+                .map(articleMapper::toResponse);
     }
 
     @Override
