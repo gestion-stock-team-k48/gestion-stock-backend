@@ -135,7 +135,7 @@ class UtilisateurServiceImpl implements UtilisateurService {
         utilisateur.setPhoto(objectName);
         Utilisateur saved = utilisateurRepository.save(utilisateur);
 
-        if (previousPhoto != null) {
+        if (previousPhoto != null && !previousPhoto.isBlank()) {
             fileStorageService.deleteFile(previousPhoto);
         }
 
@@ -147,7 +147,7 @@ class UtilisateurServiceImpl implements UtilisateurService {
         Utilisateur utilisateur = findUtilisateurOrThrow(id);
         String photo = utilisateur.getPhoto();
         utilisateurRepository.delete(utilisateur);
-        if (photo != null) {
+        if (photo != null && !photo.isBlank()) {
             fileStorageService.deleteFile(photo);
         }
     }

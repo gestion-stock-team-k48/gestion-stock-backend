@@ -7,6 +7,7 @@ import cm.kfokam.stock.category.model.Category;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -66,6 +67,9 @@ class CategoryServiceImpl implements CategoryService {
     @Override
     public void delete(Long id) {
         Category category = findCategoryOrThrow(id);
+        if (categoryRepository.existsArticleForCategory(id)) {
+            throw new InvalidOperationException("Impossible de supprimer cette catégorie car elle contient des articles.");
+        }
         categoryRepository.delete(category);
     }
 

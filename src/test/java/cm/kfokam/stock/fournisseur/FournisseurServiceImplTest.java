@@ -260,6 +260,17 @@ class FournisseurServiceImplTest {
     }
 
     @Test
+    void delete_shouldNotDeletePhoto_whenPhotoIsBlank() {
+        fournisseur.setPhoto("   ");
+        when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));
+
+        fournisseurService.delete(1L);
+
+        verify(fournisseurRepository, times(1)).delete(fournisseur);
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
         when(fournisseurRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 

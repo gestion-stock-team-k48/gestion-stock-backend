@@ -9,6 +9,7 @@ import cm.kfokam.stock.category.dto.CategoryResponse;
 import cm.kfokam.stock.category.model.Category;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -329,11 +330,74 @@ class ArticleServiceImplTest {
     }
 
     @Test
+    void delete_shouldNotDeletePhoto_whenPhotoIsBlank() {
+        article.setPhoto("   ");
+        when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
+
+        articleService.delete(1L);
+
+        verify(articleRepository, times(1)).delete(article);
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
     void delete_shouldThrowEntityNotFoundException_whenNotFound() {
         when(articleRepository.findByIdAndEntrepriseId(99L, ENTREPRISE_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> articleService.delete(99L))
                 .isInstanceOf(EntityNotFoundException.class);
+
+        verify(articleRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_shouldThrowInvalidOperationException_whenArticleHasCommandeClientLines() {
+        when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
+        when(articleRepository.existsInCommandeClient(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> articleService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Impossible de supprimer cet article car il est actuellement associé à des commandes, des ventes ou des mouvements de stock.");
+
+        verify(articleRepository, never()).delete(any());
+        verify(fileStorageService, never()).deleteFile(any());
+    }
+
+    @Test
+    void delete_shouldThrowInvalidOperationException_whenArticleHasCommandeFournisseurLines() {
+        when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
+        when(articleRepository.existsInCommandeClient(1L)).thenReturn(false);
+        when(articleRepository.existsInCommandeFournisseur(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> articleService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class);
+
+        verify(articleRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_shouldThrowInvalidOperationException_whenArticleHasVenteLines() {
+        when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
+        when(articleRepository.existsInCommandeClient(1L)).thenReturn(false);
+        when(articleRepository.existsInCommandeFournisseur(1L)).thenReturn(false);
+        when(articleRepository.existsInVente(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> articleService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class);
+
+        verify(articleRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_shouldThrowInvalidOperationException_whenArticleHasMouvementsStock() {
+        when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));
+        when(articleRepository.existsInCommandeClient(1L)).thenReturn(false);
+        when(articleRepository.existsInCommandeFournisseur(1L)).thenReturn(false);
+        when(articleRepository.existsInVente(1L)).thenReturn(false);
+        when(articleRepository.existsInMouvementStock(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> articleService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class);
 
         verify(articleRepository, never()).delete(any());
     }

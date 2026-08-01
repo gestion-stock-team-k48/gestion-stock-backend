@@ -10,6 +10,7 @@ import cm.kfokam.stock.category.model.Category;
 import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateCodeException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
+import cm.kfokam.stock.exception.InvalidOperationException;
 import cm.kfokam.stock.storage.FileStorageService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -89,7 +90,7 @@ class ArticleServiceImpl implements ArticleService {
         article.setPhoto(objectName);
         Article saved = articleRepository.save(article);
 
-        if (previousPhoto != null) {
+        if (previousPhoto != null && !previousPhoto.isBlank()) {
             fileStorageService.deleteFile(previousPhoto);
         }
 
@@ -99,9 +100,16 @@ class ArticleServiceImpl implements ArticleService {
     @Override
     public void delete(Long id) {
         Article article = findArticleOrThrow(id);
+        if (articleRepository.existsInCommandeClient(id)
+                || articleRepository.existsInCommandeFournisseur(id)
+                || articleRepository.existsInVente(id)
+                || articleRepository.existsInMouvementStock(id)) {
+            throw new InvalidOperationException(
+                    "Impossible de supprimer cet article car il est actuellement associé à des commandes, des ventes ou des mouvements de stock.");
+        }
         String photo = article.getPhoto();
         articleRepository.delete(article);
-        if (photo != null) {
+        if (photo != null && !photo.isBlank()) {
             fileStorageService.deleteFile(photo);
         }
     }

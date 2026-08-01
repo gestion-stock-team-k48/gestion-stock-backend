@@ -77,7 +77,7 @@ class FournisseurServiceImpl implements FournisseurService {
         fournisseur.setPhoto(objectName);
         Fournisseur saved = fournisseurRepository.save(fournisseur);
 
-        if (previousPhoto != null) {
+        if (previousPhoto != null && !previousPhoto.isBlank()) {
             fileStorageService.deleteFile(previousPhoto);
         }
 
@@ -89,7 +89,7 @@ class FournisseurServiceImpl implements FournisseurService {
         Fournisseur fournisseur = findFournisseurOrThrow(id);
         String photo = fournisseur.getPhoto();
         fournisseurRepository.delete(fournisseur);
-        if (photo != null) {
+        if (photo != null && !photo.isBlank()) {
             fileStorageService.deleteFile(photo);
         }
     }

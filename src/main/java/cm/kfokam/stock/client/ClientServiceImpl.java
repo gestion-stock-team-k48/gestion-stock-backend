@@ -77,7 +77,7 @@ class ClientServiceImpl implements ClientService {
         client.setPhoto(objectName);
         Client saved = clientRepository.save(client);
 
-        if (previousPhoto != null) {
+        if (previousPhoto != null && !previousPhoto.isBlank()) {
             fileStorageService.deleteFile(previousPhoto);
         }
 
@@ -89,7 +89,7 @@ class ClientServiceImpl implements ClientService {
         Client client = findClientOrThrow(id);
         String photo = client.getPhoto();
         clientRepository.delete(client);
-        if (photo != null) {
+        if (photo != null && !photo.isBlank()) {
             fileStorageService.deleteFile(photo);
         }
     }
