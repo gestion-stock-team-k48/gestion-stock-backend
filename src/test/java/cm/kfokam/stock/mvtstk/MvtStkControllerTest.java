@@ -56,7 +56,8 @@ class MvtStkControllerTest {
 
     private MvtStkResponse sampleResponse(TypeMvtStk type) {
         return new MvtStkResponse(1L, Instant.parse("2026-07-27T10:00:00Z"), new BigDecimal("5"),
-                1L, "Ordinateur portable", type, SourceMvtStk.COMMANDE_FOURNISSEUR, null, 1L);
+                1L, "Ordinateur portable", type, SourceMvtStk.COMMANDE_FOURNISSEUR, null, 1L,
+                null, null, null, null);
     }
 
     @Test

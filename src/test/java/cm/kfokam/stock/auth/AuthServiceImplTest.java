@@ -8,6 +8,7 @@ import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.EntrepriseService;
 import cm.kfokam.stock.entreprise.dto.EntrepriseRequest;
 import cm.kfokam.stock.entreprise.dto.EntrepriseResponse;
+import cm.kfokam.stock.exception.EmailDeliveryException;
 import cm.kfokam.stock.exception.InvalidTokenException;
 import cm.kfokam.stock.utilisateur.UtilisateurService;
 import cm.kfokam.stock.utilisateur.model.Utilisateur;
@@ -30,6 +31,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,6 +41,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -99,7 +102,8 @@ class AuthServiceImplTest {
                 "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun"
         );
         EntrepriseResponse entrepriseResponse = new EntrepriseResponse(1L, "Kfokam SARL", "Gestion de stock",
-                null, "Douala", null, "Cameroun", "CF-001", null, "contact@kfokam.cm", "+237600000000", "https://kfokam.cm");
+                null, "Douala", null, "Cameroun", "CF-001", null, "contact@kfokam.cm", "+237600000000", "https://kfokam.cm",
+                null, null, null, null);
 
         when(entrepriseService.create(any(EntrepriseRequest.class))).thenReturn(entrepriseResponse);
         when(userDetailsService.loadUserByUsername("francky@kfokam.cm")).thenReturn(userDetails);
@@ -185,12 +189,51 @@ class AuthServiceImplTest {
         Utilisateur utilisateur = Utilisateur.builder().id(1L).email("francky@kfokam.cm").build();
         when(userDetailsService.loadUserByUsername("francky@kfokam.cm")).thenReturn(utilisateur);
         when(entityManager.getReference(Utilisateur.class, 1L)).thenReturn(utilisateur);
+        when(passwordResetTokenRepository.findAllByUtilisateurIdAndUsedFalse(1L)).thenReturn(List.of());
 
         authService.forgotPassword("francky@kfokam.cm");
 
-        verify(passwordResetTokenRepository).deleteByUtilisateurId(1L);
+        verify(passwordResetTokenRepository).findAllByUtilisateurIdAndUsedFalse(1L);
+        verify(passwordResetTokenRepository).saveAll(List.of());
         verify(passwordResetTokenRepository).save(any(PasswordResetToken.class));
         verify(emailService).envoyerResetMotDePasse(eq("francky@kfokam.cm"), anyString(), eq(30L));
+    }
+
+    @Test
+    void forgotPassword_shouldInvalidateExistingUnusedTokens_whenEmailExists() {
+        Utilisateur utilisateur = Utilisateur.builder().id(1L).email("francky@kfokam.cm").build();
+        PasswordResetToken ancienJeton = PasswordResetToken.builder()
+                .id(5L)
+                .token("old-token")
+                .utilisateur(utilisateur)
+                .expirationDate(Instant.now().plus(10, ChronoUnit.MINUTES))
+                .used(false)
+                .build();
+        when(userDetailsService.loadUserByUsername("francky@kfokam.cm")).thenReturn(utilisateur);
+        when(entityManager.getReference(Utilisateur.class, 1L)).thenReturn(utilisateur);
+        when(passwordResetTokenRepository.findAllByUtilisateurIdAndUsedFalse(1L)).thenReturn(List.of(ancienJeton));
+
+        authService.forgotPassword("francky@kfokam.cm");
+
+        assertThat(ancienJeton.isUsed()).isTrue();
+        verify(passwordResetTokenRepository).saveAll(List.of(ancienJeton));
+    }
+
+    @Test
+    void forgotPassword_shouldPropagateEmailDeliveryException_whenEmailDeliveryFails() {
+        Utilisateur utilisateur = Utilisateur.builder().id(1L).email("francky@kfokam.cm").build();
+        when(userDetailsService.loadUserByUsername("francky@kfokam.cm")).thenReturn(utilisateur);
+        when(entityManager.getReference(Utilisateur.class, 1L)).thenReturn(utilisateur);
+        when(passwordResetTokenRepository.findAllByUtilisateurIdAndUsedFalse(1L)).thenReturn(List.of());
+        doThrow(new EmailDeliveryException("SMTP indisponible", new RuntimeException()))
+                .when(emailService).envoyerResetMotDePasse(anyString(), anyString(), anyLong());
+
+        // L'exception n'est pas catchée ici : c'est ce qui permet au proxy @Transactional
+        // d'annuler l'INSERT du jeton déjà effectué (aucun jeton orphelin en base).
+        assertThatThrownBy(() -> authService.forgotPassword("francky@kfokam.cm"))
+                .isInstanceOf(EmailDeliveryException.class);
+
+        verify(passwordResetTokenRepository).save(any(PasswordResetToken.class));
     }
 
     @Test
@@ -228,7 +271,8 @@ class AuthServiceImplTest {
         when(passwordResetTokenRepository.findByToken("bad-token")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.resetPassword("bad-token", "NewP@ss1!"))
-                .isInstanceOf(InvalidTokenException.class);
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le code de réinitialisation est invalide");
 
         verify(utilisateurService, never()).resetPassword(any(), any());
     }
@@ -246,7 +290,8 @@ class AuthServiceImplTest {
         when(passwordResetTokenRepository.findByToken("expired-token")).thenReturn(Optional.of(expiredToken));
 
         assertThatThrownBy(() -> authService.resetPassword("expired-token", "NewP@ss1!"))
-                .isInstanceOf(InvalidTokenException.class);
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le code de réinitialisation a expiré");
 
         verify(utilisateurService, never()).resetPassword(any(), any());
     }
@@ -264,7 +309,8 @@ class AuthServiceImplTest {
         when(passwordResetTokenRepository.findByToken("used-token")).thenReturn(Optional.of(usedToken));
 
         assertThatThrownBy(() -> authService.resetPassword("used-token", "NewP@ss1!"))
-                .isInstanceOf(InvalidTokenException.class);
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le code de réinitialisation a déjà été utilisé");
 
         verify(utilisateurService, never()).resetPassword(any(), any());
     }

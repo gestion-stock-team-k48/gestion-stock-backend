@@ -60,7 +60,8 @@ class EntrepriseServiceImplTest {
 
         response = new EntrepriseResponse(
                 1L, "Kfokam SARL", "Gestion de stock", null, "Douala", null, "Cameroun",
-                "CF-001", "logo.png", "contact@kfokam.cm", "+237600000000", "https://kfokam.cm"
+                "CF-001", "logo.png", "contact@kfokam.cm", "+237600000000", "https://kfokam.cm",
+                null, null, null, null
         );
     }
 
@@ -120,7 +121,8 @@ class EntrepriseServiceImplTest {
                 .photo("logo2.png").build();
         EntrepriseResponse updatedResponse = new EntrepriseResponse(
                 1L, "Kfokam SARL", "Nouvelle description", null, "Yaoundé", null, "Cameroun",
-                "CF-001", "logo2.png", "contact@kfokam.cm", "+237600000001", "https://kfokam.cm"
+                "CF-001", "logo2.png", "contact@kfokam.cm", "+237600000001", "https://kfokam.cm",
+                null, null, null, null
         );
 
         when(entrepriseRepository.findById(1L)).thenReturn(Optional.of(entreprise));

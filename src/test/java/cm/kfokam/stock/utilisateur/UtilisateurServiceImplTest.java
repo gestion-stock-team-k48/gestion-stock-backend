@@ -104,7 +104,8 @@ class UtilisateurServiceImplTest {
 
         response = new UtilisateurResponse(
                 1L, "Tchana", "Francky", "francky@kfokam.cm", LocalDate.of(1995, 3, 10),
-                null, null, "Douala", null, "Cameroun", 1L, "Kfokam SARL", Set.of(Role.ROLE_ADMIN), true
+                null, null, "Douala", null, "Cameroun", 1L, "Kfokam SARL", Set.of(Role.ROLE_ADMIN), true,
+                null, null, null, null
         );
 
         changePasswordRequest = new ChangePasswordRequest("OldP@ss1", "NewP@ss1!");
@@ -192,7 +193,8 @@ class UtilisateurServiceImplTest {
         UtilisateurResponse responseWithAdresse = new UtilisateurResponse(
                 1L, "Tchana", "Francky", "francky@kfokam.cm", LocalDate.of(1995, 3, 10),
                 null, "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun",
-                1L, "Kfokam SARL", Set.of(Role.ROLE_ADMIN), false
+                1L, "Kfokam SARL", Set.of(Role.ROLE_ADMIN), false,
+                null, null, null, null
         );
 
         when(utilisateurRepository.existsByEmail("francky@kfokam.cm")).thenReturn(false);

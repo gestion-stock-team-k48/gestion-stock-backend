@@ -74,13 +74,13 @@ class MvtStkServiceImplTest {
         article = Article.builder().id(1L).code("ART-01").designation("Ordinateur portable").build();
         articleResponse = new ArticleResponse(1L, "ART-01", "Ordinateur portable",
                 new BigDecimal("500.00"), new BigDecimal("19.25"), new BigDecimal("596.25"),
-                null, new BigDecimal("5"), 1L, "Informatique");
+                null, new BigDecimal("5"), 1L, "Informatique", null, null, null, null);
 
         request = new MvtStkRequest(1L, new BigDecimal("5"), SourceMvtStk.COMMANDE_FOURNISSEUR);
         correctionRequest = new MvtStkCorrectionRequest(1L, new BigDecimal("5"), "Casse en entrepôt");
 
         response = new MvtStkResponse(1L, Instant.now(), new BigDecimal("5"), 1L, "Ordinateur portable",
-                TypeMvtStk.ENTREE, SourceMvtStk.COMMANDE_FOURNISSEUR, null, 1L);
+                TypeMvtStk.ENTREE, SourceMvtStk.COMMANDE_FOURNISSEUR, null, 1L, null, null, null, null);
 
         lenient().when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
         lenient().when(mvtStkRepository.save(any(MvtStk.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -253,7 +253,7 @@ class MvtStkServiceImplTest {
     void articlesEnAlerte_shouldReturnOnlyArticlesAtOrBelowSeuil() {
         ArticleResponse articleBas = new ArticleResponse(2L, "ART-02", "Souris",
                 new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"),
-                null, new BigDecimal("5"), 1L, "Informatique");
+                null, new BigDecimal("5"), 1L, "Informatique", null, null, null, null);
 
         when(articleService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(articleResponse, articleBas)));
         when(mvtStkRepository.findByArticleIdAndIdEntrepriseOrderByDateMvtAsc(1L, ENTREPRISE_ID, Pageable.unpaged()))

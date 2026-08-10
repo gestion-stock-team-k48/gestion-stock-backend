@@ -26,6 +26,21 @@ services:
     volumes:
       - miniodata:/data
 
+  # Serveur SMTP factice pour le développement:
+  # capture tous les emails sortants sans jamais les délivrer réellement. Interface web de
+  # consultation sur http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:v1.15
+    container_name: gestion_stock_mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # Port SMTP
+      - "8025:8025"  # Port UI Web
+    volumes:
+      - maildata:/data
+    environment:
+      MP_DATABASE_PATH: /data/mailpit.db
 volumes:
   pgdata:
   miniodata:
+  maildata:

@@ -61,6 +61,17 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
+    // Échec d'un envoi d'email jugé critique pour l'opération (ex: jeton de réinitialisation de mot
+    // de passe) — la transaction appelante a déjà été annulée par Spring (RuntimeException non
+    // catchée). On journalise la cause complète côté serveur mais on ne renvoie qu'un message générique
+    // au client : ni l'adresse du destinataire, ni le détail SMTP n'ont à fuiter dans la réponse HTTP.
+    @ExceptionHandler(EmailDeliveryException.class)
+    public ResponseEntity<ErrorResponse> handleEmailDelivery(EmailDeliveryException ex, HttpServletRequest request) {
+        log.error("Échec d'envoi d'un email critique sur {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE,
+                "Le service d'envoi d'emails est momentanément indisponible. Veuillez réessayer plus tard.", request);
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect", request);

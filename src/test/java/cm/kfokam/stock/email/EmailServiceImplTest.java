@@ -2,6 +2,7 @@ package cm.kfokam.stock.email;
 
 import cm.kfokam.stock.commandeclient.dto.CommandeClientResponse;
 import cm.kfokam.stock.commandefournisseur.dto.CommandeFournisseurResponse;
+import cm.kfokam.stock.exception.EmailDeliveryException;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -53,13 +55,13 @@ class EmailServiceImplTest {
     private CommandeClientResponse commandeClient() {
         return new CommandeClientResponse(1L, "CC-2026-0001", LocalDate.now(),
                 cm.kfokam.stock.commandeclient.model.EtatCommande.EN_PREPARATION,
-                1L, "Doe", "John", BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of());
+                1L, "Doe", "John", BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of(), null, null, null, null);
     }
 
     private CommandeFournisseurResponse commandeFournisseur() {
         return new CommandeFournisseurResponse(1L, "CF-2026-0001", LocalDate.now(),
                 cm.kfokam.stock.commandefournisseur.model.EtatCommande.EN_PREPARATION,
-                1L, "Martin", "Paul", BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of());
+                1L, "Martin", "Paul", BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of(), null, null, null, null);
     }
 
     @Test
@@ -118,14 +120,18 @@ class EmailServiceImplTest {
     }
 
     @Test
-    void envoyerResetMotDePasse_shouldNotThrow_whenSmtpUnreachable() {
+    void envoyerResetMotDePasse_shouldThrowEmailDeliveryException_whenSmtpUnreachable() {
         when(mailSender.createMimeMessage()).thenReturn(newMimeMessage());
         when(templateEngine.process(eq("email/reset-password"), any(Context.class)))
                 .thenReturn("<html>reset</html>");
         doThrow(new MailSendException("SMTP indisponible")).when(mailSender).send(any(MimeMessage.class));
 
-        assertThatCode(() -> emailService.envoyerResetMotDePasse("john@doe.com", "some-token", 30L))
-                .doesNotThrowAnyException();
+        // Contrairement aux autres emails (fire-and-forget), l'envoi du jeton de réinitialisation
+        // est critique : l'échec doit remonter pour que le transactionnel appelant puisse annuler
+        // la persistance du jeton (voir AuthServiceImpl.forgotPassword).
+        assertThatThrownBy(() -> emailService.envoyerResetMotDePasse("john@doe.com", "some-token", 30L))
+                .isInstanceOf(EmailDeliveryException.class)
+                .hasCauseInstanceOf(MailSendException.class);
     }
 
     @Test

@@ -100,12 +100,14 @@ class CommandeClientServiceImplTest {
         lenient().when(entityManager.getReference(Entreprise.class, ENTREPRISE_ID)).thenReturn(entreprise);
 
         client = Client.builder().id(1L).nom("Doe").prenom("John").email("john@doe.com").build();
-        clientResponse = new ClientResponse(1L, "Doe", "John", "john@doe.com", null, null, null, null, null, null);
+        clientResponse = new ClientResponse(1L, "Doe", "John", "john@doe.com", null, null, null, null, null, null,
+                null, null, null, null);
 
         article = Article.builder().id(1L).code("ART-01").designation("Ordinateur portable").build();
         articleResponse = new ArticleResponse(1L, "ART-01", "Ordinateur portable",
                 new BigDecimal("500.00"), new BigDecimal("19.25"), new BigDecimal("596.25"),
-                null, new BigDecimal("5"), 1L, "Informatique");
+                null, new BigDecimal("5"), 1L, "Informatique",
+                null, null, null, null);
 
         ligne = LigneCommandeClient.builder()
                 .id(1L)
@@ -141,7 +143,8 @@ class CommandeClientServiceImplTest {
                 EtatCommande.EN_PREPARATION,
                 1L, "Doe", "John",
                 new BigDecimal("1000.00"), new BigDecimal("192.50"), new BigDecimal("1192.50"),
-                List.of()
+                List.of(),
+                null, null, null, null
         );
     }
 

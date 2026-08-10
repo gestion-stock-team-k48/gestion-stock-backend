@@ -67,7 +67,8 @@ class UtilisateurControllerTest {
     private UtilisateurResponse sampleResponse() {
         return new UtilisateurResponse(
                 1L, "Tchana", "Francky", "francky@kfokam.cm", LocalDate.of(1995, 3, 10),
-                null, null, "Douala", null, "Cameroun", 1L, "Kfokam SARL", Set.of(Role.ROLE_ADMIN), true
+                null, null, "Douala", null, "Cameroun", 1L, "Kfokam SARL", Set.of(Role.ROLE_ADMIN), true,
+                null, null, null, null
         );
     }
 
