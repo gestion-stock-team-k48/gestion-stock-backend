@@ -82,7 +82,8 @@ class FournisseurServiceImplTest {
 
         response = new FournisseurResponse(
                 1L, "Kamdem", "Paul", "paul@example.com", "+237600000002",
-                null, "Douala", null, "Cameroun", "photo.png"
+                null, "Douala", null, "Cameroun", "photo.png",
+                null, null, null, null
         );
     }
 
@@ -154,7 +155,8 @@ class FournisseurServiceImplTest {
                 .photo("photo2.png").build();
         FournisseurResponse updatedResponse = new FournisseurResponse(
                 1L, "Kamdem", "Paul", "new@example.com", "+237600000003",
-                null, "Yaoundé", null, "Cameroun", "photo2.png"
+                null, "Yaoundé", null, "Cameroun", "photo2.png",
+                null, null, null, null
         );
 
         when(fournisseurRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(fournisseur));

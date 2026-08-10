@@ -55,7 +55,8 @@ class FournisseurControllerTest {
     private FournisseurResponse sampleResponse() {
         return new FournisseurResponse(
                 1L, "Kamdem", "Paul", "paul@example.com", "+237600000002",
-                null, "Douala", null, "Cameroun", "photo.png"
+                null, "Douala", null, "Cameroun", "photo.png",
+                null, null, null, null
         );
     }
 
@@ -140,7 +141,8 @@ class FournisseurControllerTest {
         List<FournisseurResponse> responses = List.of(
                 sampleResponse(),
                 new FournisseurResponse(2L, "Njoya", "Aissatou", "aissatou@example.com", null,
-                        null, "Yaoundé", null, "Cameroun", null)
+                        null, "Yaoundé", null, "Cameroun", null,
+                        null, null, null, null)
         );
         Page<FournisseurResponse> page = new PageImpl<>(responses);
         when(fournisseurService.getAll(any(Pageable.class))).thenReturn(page);

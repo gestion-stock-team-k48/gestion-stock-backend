@@ -70,7 +70,8 @@ class ArticleControllerTest {
                 "photo.png",
                 new BigDecimal("5"),
                 1L,
-                "Informatique"
+                "Informatique",
+                null, null, null, null
         );
     }
 
@@ -171,7 +172,8 @@ class ArticleControllerTest {
         List<ArticleResponse> responses = List.of(
                 sampleResponse(),
                 new ArticleResponse(2L, "ART-02", "Souris", new BigDecimal("10.00"),
-                        new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique")
+                        new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique",
+                        null, null, null, null)
         );
         Page<ArticleResponse> page = new PageImpl<>(responses);
         when(articleService.getAll(any(Pageable.class))).thenReturn(page);

@@ -80,7 +80,7 @@ class VenteServiceImplTest {
         article = Article.builder().id(1L).code("ART-01").designation("Ordinateur portable").build();
         articleResponse = new ArticleResponse(1L, "ART-01", "Ordinateur portable",
                 new BigDecimal("500.00"), new BigDecimal("19.25"), new BigDecimal("596.25"),
-                null, new BigDecimal("5"), 1L, "Informatique");
+                null, new BigDecimal("5"), 1L, "Informatique", null, null, null, null);
 
         ligneVente = LigneVente.builder()
                 .id(1L)
@@ -106,7 +106,9 @@ class VenteServiceImplTest {
 
         response = new VenteResponse(
                 1L, "VT-2026-0001", Instant.parse("2026-07-27T10:00:00Z"), "Vente comptoir", 1L,
-                List.of(new LigneVenteResponse(1L, 1L, "Ordinateur portable", new BigDecimal("2"), new BigDecimal("596.25")))
+                List.of(new LigneVenteResponse(1L, 1L, "Ordinateur portable", new BigDecimal("2"), new BigDecimal("596.25"),
+                        null, null, null, null)),
+                null, null, null, null
         );
     }
 
@@ -137,7 +139,8 @@ class VenteServiceImplTest {
         );
         Article article2 = Article.builder().id(2L).code("ART-02").designation("Souris").build();
         ArticleResponse articleResponse2 = new ArticleResponse(2L, "ART-02", "Souris",
-                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique");
+                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique",
+                null, null, null, null);
 
         when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
         when(venteMapper.toEntity(multiLineRequest)).thenReturn(new Vente());
@@ -193,7 +196,8 @@ class VenteServiceImplTest {
                 List.of(new LigneVenteRequest(1L, new BigDecimal("2")), new LigneVenteRequest(2L, new BigDecimal("3")))
         );
         ArticleResponse articleResponse2 = new ArticleResponse(2L, "ART-02", "Souris",
-                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique");
+                new BigDecimal("10.00"), new BigDecimal("19.25"), new BigDecimal("11.93"), null, new BigDecimal("5"), 1L, "Informatique",
+                null, null, null, null);
 
         when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
         when(venteMapper.toEntity(multiLineRequest)).thenReturn(new Vente());

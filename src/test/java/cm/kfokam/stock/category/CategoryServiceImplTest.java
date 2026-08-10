@@ -62,7 +62,7 @@ class CategoryServiceImplTest {
                 .build();
 
         request = new CategoryRequest("CAT-01", "Informatique");
-        response = new CategoryResponse(1L, "CAT-01", "Informatique");
+        response = new CategoryResponse(1L, "CAT-01", "Informatique", null, null, null, null);
     }
 
     @Test
@@ -125,7 +125,7 @@ class CategoryServiceImplTest {
     void update_shouldReturnUpdatedResponse_whenValid() {
         CategoryRequest updateRequest = new CategoryRequest("CAT-02", "Bureautique");
         Category updatedCategory = Category.builder().id(1L).code("CAT-02").designation("Bureautique").build();
-        CategoryResponse updatedResponse = new CategoryResponse(1L, "CAT-02", "Bureautique");
+        CategoryResponse updatedResponse = new CategoryResponse(1L, "CAT-02", "Bureautique", null, null, null, null);
 
         when(categoryRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(category));
         when(categoryRepository.findByCodeAndEntrepriseId("CAT-02", ENTREPRISE_ID)).thenReturn(Optional.empty());

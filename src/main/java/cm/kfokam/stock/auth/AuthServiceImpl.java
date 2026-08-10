@@ -28,6 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -115,7 +116,7 @@ class AuthServiceImpl implements AuthService {
             return;
         }
 
-        passwordResetTokenRepository.deleteByUtilisateurId(utilisateur.getId());
+        invalidateActiveTokens(utilisateur.getId());
 
         String token = UUID.randomUUID().toString();
         PasswordResetToken resetToken = PasswordResetToken.builder()
@@ -125,22 +126,67 @@ class AuthServiceImpl implements AuthService {
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
+        // Envoi critique (voir EmailServiceImpl.envoyerCritique) : une EmailDeliveryException non
+        // catchée ici remonte au conteneur transactionnel et annule l'intégralité de cette méthode
+        // (invalidation des anciens jetons + création du nouveau) — impossible de laisser en base un
+        // jeton que l'utilisateur ne recevra jamais.
         emailService.envoyerResetMotDePasse(utilisateur.getEmail(), token, resetTokenExpirationMinutes);
+    }
+
+    private void invalidateActiveTokens(Long utilisateurId) {
+        List<PasswordResetToken> anciensJetons = passwordResetTokenRepository.findAllByUtilisateurIdAndUsedFalse(utilisateurId);
+        anciensJetons.forEach(jeton -> jeton.setUsed(true));
+        passwordResetTokenRepository.saveAll(anciensJetons);
     }
 
     @Override
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new InvalidTokenException("Le code de réinitialisation est invalide"));
-
-        if (resetToken.isUsed() || resetToken.getExpirationDate().isBefore(Instant.now())) {
-            throw new InvalidTokenException("Le code de réinitialisation est invalide ou a expiré");
-        }
+        PasswordResetToken resetToken = requireValidToken(token);
 
         utilisateurService.resetPassword(resetToken.getUtilisateur().getId(), newPassword);
 
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
+    }
+
+    // Le statut d'un jeton est modélisé explicitement plutôt que testé par une cascade de if/else :
+    // le compilateur garantit (switch exhaustif sur interface scellée, JEP 441/440) qu'aucun cas n'est
+    // oublié si un nouveau statut est ajouté un jour. Optional.findByToken(...) gère l'absence sans
+    // effet de bord (pas de null, pas d'exception levée avant qu'on ait choisi le message adapté).
+    private PasswordResetToken requireValidToken(String rawToken) {
+        TokenStatus status = passwordResetTokenRepository.findByToken(rawToken)
+                .<TokenStatus>map(AuthServiceImpl::classify)
+                .orElseGet(TokenStatus.Unknown::new);
+
+        return switch (status) {
+            case TokenStatus.Valid(PasswordResetToken t) -> t;
+            case TokenStatus.Unknown ignored ->
+                    throw new InvalidTokenException("Le code de réinitialisation est invalide");
+            case TokenStatus.Expired ignored ->
+                    throw new InvalidTokenException("Le code de réinitialisation a expiré");
+            case TokenStatus.Consumed ignored ->
+                    throw new InvalidTokenException("Le code de réinitialisation a déjà été utilisé");
+        };
+    }
+
+    private static TokenStatus classify(PasswordResetToken token) {
+        if (token.isUsed()) {
+            return new TokenStatus.Consumed(token);
+        }
+        if (token.getExpirationDate().isBefore(Instant.now())) {
+            return new TokenStatus.Expired(token);
+        }
+        return new TokenStatus.Valid(token);
+    }
+
+    private sealed interface TokenStatus {
+        record Valid(PasswordResetToken token) implements TokenStatus {}
+
+        record Unknown() implements TokenStatus {}
+
+        record Expired(PasswordResetToken token) implements TokenStatus {}
+
+        record Consumed(PasswordResetToken token) implements TokenStatus {}
     }
 }

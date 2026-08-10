@@ -55,7 +55,8 @@ class ClientControllerTest {
     private ClientResponse sampleResponse() {
         return new ClientResponse(
                 1L, "Ngono", "Ange", "ange@example.com", "+237600000000",
-                null, "Douala", null, "Cameroun", "photo.png"
+                null, "Douala", null, "Cameroun", "photo.png",
+                null, null, null, null
         );
     }
 
@@ -140,7 +141,8 @@ class ClientControllerTest {
         List<ClientResponse> responses = List.of(
                 sampleResponse(),
                 new ClientResponse(2L, "Kamga", "Alice", "alice@example.com", null,
-                        null, "Yaoundé", null, "Cameroun", null)
+                        null, "Yaoundé", null, "Cameroun", null,
+                        null, null, null, null)
         );
         Page<ClientResponse> page = new PageImpl<>(responses);
         when(clientService.getAll(any(Pageable.class))).thenReturn(page);

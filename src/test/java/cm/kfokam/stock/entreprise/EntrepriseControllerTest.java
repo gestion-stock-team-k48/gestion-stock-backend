@@ -47,7 +47,8 @@ class EntrepriseControllerTest {
     private EntrepriseResponse sampleResponse() {
         return new EntrepriseResponse(
                 1L, "Kfokam SARL", "Gestion de stock", null, "Douala", null, "Cameroun",
-                "CF-001", "logo.png", "contact@kfokam.cm", "+237600000000", "https://kfokam.cm"
+                "CF-001", "logo.png", "contact@kfokam.cm", "+237600000000", "https://kfokam.cm",
+                null, null, null, null
         );
     }
 

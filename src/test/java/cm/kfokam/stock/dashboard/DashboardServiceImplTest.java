@@ -49,12 +49,12 @@ class DashboardServiceImplTest {
         Instant moisPasse = now.minus(400, ChronoUnit.DAYS);
 
         VenteResponse venteRecente = new VenteResponse(1L, "VT-0001", now, null, 1L, List.of(
-                new LigneVenteResponse(1L, 10L, "Article 1", new BigDecimal("3"), new BigDecimal("100.00")),
-                new LigneVenteResponse(2L, 20L, "Article 2", new BigDecimal("3"), new BigDecimal("20.00"))
-        ));
+                new LigneVenteResponse(1L, 10L, "Article 1", new BigDecimal("3"), new BigDecimal("100.00"), null, null, null, null),
+                new LigneVenteResponse(2L, 20L, "Article 2", new BigDecimal("3"), new BigDecimal("20.00"), null, null, null, null)
+        ), null, null, null, null);
         VenteResponse venteAncienne = new VenteResponse(2L, "VT-0002", moisPasse, null, 1L, List.of(
-                new LigneVenteResponse(3L, 10L, "Article 1", new BigDecimal("2"), new BigDecimal("100.00"))
-        ));
+                new LigneVenteResponse(3L, 10L, "Article 1", new BigDecimal("2"), new BigDecimal("100.00"), null, null, null, null)
+        ), null, null, null, null);
         when(venteService.getAll(Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(venteRecente, venteAncienne)));
 
         CommandeClientResponse ccEnPreparation = commandeClient(EtatCommande.EN_PREPARATION);
@@ -97,11 +97,11 @@ class DashboardServiceImplTest {
 
     private CommandeClientResponse commandeClient(EtatCommande etat) {
         return new CommandeClientResponse(1L, "CC-0001", LocalDate.now(), etat, 1L, "Doe", "John",
-                BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of());
+                BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of(), null, null, null, null);
     }
 
     private CommandeFournisseurResponse commandeFournisseur(cm.kfokam.stock.commandefournisseur.model.EtatCommande etat) {
         return new CommandeFournisseurResponse(1L, "CF-0001", LocalDate.now(), etat, 1L, "Martin", "Paul",
-                BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of());
+                BigDecimal.TEN, BigDecimal.ONE, BigDecimal.TEN, List.of(), null, null, null, null);
     }
 }

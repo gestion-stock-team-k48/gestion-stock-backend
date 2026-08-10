@@ -43,7 +43,7 @@ class CategoryControllerTest {
     @Test
     void create_shouldReturn201_whenValidRequest() throws Exception {
         CategoryRequest request = new CategoryRequest("CAT-01", "Informatique");
-        CategoryResponse response = new CategoryResponse(1L, "CAT-01", "Informatique");
+        CategoryResponse response = new CategoryResponse(1L, "CAT-01", "Informatique", null, null, null, null);
 
         when(categoryService.create(request)).thenReturn(response);
 
@@ -83,7 +83,7 @@ class CategoryControllerTest {
 
     @Test
     void getById_shouldReturn200_whenFound() throws Exception {
-        CategoryResponse response = new CategoryResponse(1L, "CAT-01", "Informatique");
+        CategoryResponse response = new CategoryResponse(1L, "CAT-01", "Informatique", null, null, null, null);
         when(categoryService.getById(1L)).thenReturn(response);
 
         mockMvc.perform(get("/categories/{id}", 1L))
@@ -104,8 +104,8 @@ class CategoryControllerTest {
     @Test
     void getAll_shouldReturn200WithList() throws Exception {
         List<CategoryResponse> responses = List.of(
-                new CategoryResponse(1L, "CAT-01", "Informatique"),
-                new CategoryResponse(2L, "CAT-02", "Bureautique")
+                new CategoryResponse(1L, "CAT-01", "Informatique", null, null, null, null),
+                new CategoryResponse(2L, "CAT-02", "Bureautique", null, null, null, null)
         );
         when(categoryService.getAll()).thenReturn(responses);
 
@@ -119,7 +119,7 @@ class CategoryControllerTest {
     @Test
     void update_shouldReturn200_whenValidRequest() throws Exception {
         CategoryRequest request = new CategoryRequest("CAT-01", "Informatique modifiée");
-        CategoryResponse response = new CategoryResponse(1L, "CAT-01", "Informatique modifiée");
+        CategoryResponse response = new CategoryResponse(1L, "CAT-01", "Informatique modifiée", null, null, null, null);
 
         when(categoryService.update(eq(1L), any(CategoryRequest.class))).thenReturn(response);
 

@@ -80,7 +80,7 @@ class ArticleServiceImplTest {
                 .designation("Informatique")
                 .build();
 
-        categoryResponse = new CategoryResponse(1L, "CAT-01", "Informatique");
+        categoryResponse = new CategoryResponse(1L, "CAT-01", "Informatique", null, null, null, null);
 
         article = Article.builder()
                 .id(1L)
@@ -114,7 +114,8 @@ class ArticleServiceImplTest {
                 "photo.png",
                 new BigDecimal("5"),
                 1L,
-                "Informatique"
+                "Informatique",
+                null, null, null, null
         );
     }
 
@@ -201,7 +202,8 @@ class ArticleServiceImplTest {
                 .build();
         ArticleResponse updatedResponse = new ArticleResponse(
                 1L, "ART-02", "Ordinateur fixe", new BigDecimal("400.00"),
-                new BigDecimal("19.25"), new BigDecimal("476.90"), "photo2.png", new BigDecimal("5"), 1L, "Informatique"
+                new BigDecimal("19.25"), new BigDecimal("476.90"), "photo2.png", new BigDecimal("5"), 1L, "Informatique",
+                null, null, null, null
         );
 
         when(articleRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(article));

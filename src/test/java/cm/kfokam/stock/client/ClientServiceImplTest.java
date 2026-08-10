@@ -82,7 +82,8 @@ class ClientServiceImplTest {
 
         response = new ClientResponse(
                 1L, "Ngono", "ange", "ange@example.com", "+237600000000",
-                null, "Douala", null, "Cameroun", "photo.png"
+                null, "Douala", null, "Cameroun", "photo.png",
+                null, null, null, null
         );
     }
 
@@ -154,7 +155,8 @@ class ClientServiceImplTest {
                 .photo("photo2.png").build();
         ClientResponse updatedResponse = new ClientResponse(
                 1L, "Ngono", "ange", "new@example.com", "+237600000001",
-                null, "Yaoundé", null, "Cameroun", "photo2.png"
+                null, "Yaoundé", null, "Cameroun", "photo2.png",
+                null, null, null, null
         );
 
         when(clientRepository.findByIdAndEntrepriseId(1L, ENTREPRISE_ID)).thenReturn(Optional.of(client));

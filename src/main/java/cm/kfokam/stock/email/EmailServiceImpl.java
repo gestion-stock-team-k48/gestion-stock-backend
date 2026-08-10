@@ -2,6 +2,8 @@ package cm.kfokam.stock.email;
 
 import cm.kfokam.stock.commandeclient.dto.CommandeClientResponse;
 import cm.kfokam.stock.commandefournisseur.dto.CommandeFournisseurResponse;
+import cm.kfokam.stock.exception.EmailDeliveryException;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -69,7 +72,7 @@ class EmailServiceImpl implements EmailService {
         context.setVariable("token", token);
         context.setVariable("expirationMinutes", expirationMinutes);
 
-        envoyer(destinataire, "Réinitialisation de votre mot de passe", TEMPLATE_RESET_PASSWORD, context);
+        envoyerCritique(destinataire, "Réinitialisation de votre mot de passe", TEMPLATE_RESET_PASSWORD, context);
     }
 
     @Override
@@ -113,18 +116,37 @@ class EmailServiceImpl implements EmailService {
     // Thymeleaf exceptions from template rendering).
     private void envoyer(String destinataire, String sujet, String template, Context context) {
         try {
-            String contenu = templateEngine.process(template, context);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(destinataire);
-            helper.setSubject(sujet);
-            helper.setText(contenu, true);
-
-            mailSender.send(message);
+            construireEtEnvoyer(destinataire, sujet, template, context);
         } catch (Exception e) {
             log.warn("Échec de l'envoi de l'email '{}' à {} : {}", sujet, destinataire, e.getMessage());
         }
+    }
+
+    // Boundary critique : contrairement à envoyer(...), l'échec n'est jamais avalé. Réservé aux emails
+    // dont l'absence de livraison rendrait une donnée déjà persistée inutilisable (ex: jeton de
+    // réinitialisation de mot de passe qui ne serait jamais lu par personne) — l'appelant est censé
+    // tourner dans une transaction qu'il faut annuler plutôt que de laisser un état incohérent en base.
+    private void envoyerCritique(String destinataire, String sujet, String template, Context context) {
+        try {
+            construireEtEnvoyer(destinataire, sujet, template, context);
+        } catch (Exception e) {
+            log.error("Échec critique de l'envoi de l'email '{}' à {}", sujet, destinataire, e);
+            throw new EmailDeliveryException(
+                    "Échec de l'envoi de l'email '%s' à %s".formatted(sujet, destinataire), e);
+        }
+    }
+
+    private void construireEtEnvoyer(String destinataire, String sujet, String template, Context context)
+            throws MessagingException, UnsupportedEncodingException {
+        String contenu = templateEngine.process(template, context);
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+        helper.setFrom(fromAddress, fromName);
+        helper.setTo(destinataire);
+        helper.setSubject(sujet);
+        helper.setText(contenu, true);
+
+        mailSender.send(message);
     }
 }

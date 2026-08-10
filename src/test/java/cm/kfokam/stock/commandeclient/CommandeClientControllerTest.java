@@ -70,7 +70,9 @@ class CommandeClientControllerTest {
                 1L, "Doe", "John",
                 new BigDecimal("1000.00"), new BigDecimal("192.50"), new BigDecimal("1192.50"),
                 List.of(new LigneCommandeClientResponse(1L, 1L, "Ordinateur portable", 2,
-                        new BigDecimal("500.00"), new BigDecimal("596.25")))
+                        new BigDecimal("500.00"), new BigDecimal("596.25"),
+                        null, null, null, null)),
+                null, null, null, null
         );
     }
 

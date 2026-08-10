@@ -65,4 +65,17 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(response.getBody().message()).isEqualTo("Vous ne pouvez modifier que votre propre photo");
     }
+
+    @Test
+    void handleEmailDelivery_shouldReturn503WithGenericMessage_withoutLeakingCause() {
+        EmailDeliveryException ex = new EmailDeliveryException(
+                "Échec de l'envoi de l'email 'Réinitialisation de votre mot de passe' à victime@cible.cm",
+                new RuntimeException("535 5.7.8 Authentication failed"));
+
+        ResponseEntity<ErrorResponse> response = handler.handleEmailDelivery(ex, requestWithMethod("POST"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getBody().message()).isEqualTo(
+                "Le service d'envoi d'emails est momentanément indisponible. Veuillez réessayer plus tard.");
+    }
 }
