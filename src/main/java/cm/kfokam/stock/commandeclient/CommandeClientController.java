@@ -3,6 +3,7 @@ package cm.kfokam.stock.commandeclient;
 import cm.kfokam.stock.commandeclient.dto.CommandeClientRequest;
 import cm.kfokam.stock.commandeclient.dto.CommandeClientResponse;
 import cm.kfokam.stock.commandeclient.dto.EtatCommandeRequest;
+import cm.kfokam.stock.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -74,8 +74,8 @@ public class CommandeClientController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<Page<CommandeClientResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(commandeClientService.getAll(pageable));
+    public ResponseEntity<PageResponse<CommandeClientResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(commandeClientService.getAll(pageable)));
     }
 
     @Operation(summary = "Historique des commandes d'un client", description = "Retourne toutes les commandes passées par un client donné")

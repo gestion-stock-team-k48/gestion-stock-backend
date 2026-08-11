@@ -1,5 +1,6 @@
 package cm.kfokam.stock.utilisateur;
 
+import cm.kfokam.stock.common.dto.PageResponse;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurMeRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
@@ -12,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -98,8 +98,8 @@ public class UtilisateurController {
             @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
     })
     @GetMapping
-    public ResponseEntity<Page<UtilisateurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(utilisateurService.getAll(pageable));
+    public ResponseEntity<PageResponse<UtilisateurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(utilisateurService.getAll(pageable)));
     }
 
     @Operation(summary = "Modifier un utilisateur", description = "Met à jour les informations d'un utilisateur existant")

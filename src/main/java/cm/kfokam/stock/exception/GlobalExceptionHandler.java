@@ -6,13 +6,18 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -87,11 +92,34 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, message, request);
     }
 
+    // Un champ peut porter plusieurs contraintes (@NotBlank + @Size, ...) : on ne garde que le
+    // premier message par champ (merge function ci-dessous), suffisant pour l'affichage sous un
+    // input Angular/React, et on préserve l'ordre de déclaration des erreurs (LinkedHashMap).
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+        Map<String, String> validationErrors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        fieldError -> fieldError.getDefaultMessage() == null ? "Valeur invalide" : fieldError.getDefaultMessage(),
+                        (first, second) -> first,
+                        LinkedHashMap::new));
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "Un ou plusieurs champs sont invalides. Voir 'validationErrors' pour le détail.",
+                request, validationErrors);
+    }
+
+    // Corps de requête illisible : JSON malformé, champ enum/nombre non convertible, etc.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "Le corps de la requête est illisible ou mal formé.", request);
+    }
+
+    // Ex: /articles/{id} appelé avec un id non numérique -> conversion de type échouée avant
+    // même d'atteindre le contrôleur.
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        String message = "Le paramètre '%s' a une valeur invalide : '%s'".formatted(ex.getName(), ex.getValue());
         return buildResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
@@ -112,12 +140,18 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, HttpServletRequest request) {
+        return buildResponse(status, message, request, null);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, HttpServletRequest request,
+                                                          Map<String, String> validationErrors) {
         ErrorResponse body = new ErrorResponse(
                 LocalDateTime.now(),
                 status.value(),
                 status.getReasonPhrase(),
                 message,
-                request.getRequestURI()
+                request.getRequestURI(),
+                validationErrors
         );
         return ResponseEntity.status(status).body(body);
     }

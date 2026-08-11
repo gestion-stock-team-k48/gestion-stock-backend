@@ -1,5 +1,6 @@
 package cm.kfokam.stock.mvtstk;
 
+import cm.kfokam.stock.common.dto.PageResponse;
 import cm.kfokam.stock.mvtstk.dto.AlerteStockResponse;
 import cm.kfokam.stock.mvtstk.dto.MvtStkCorrectionRequest;
 import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
@@ -11,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -102,10 +102,10 @@ public class MvtStkController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/article/{idArticle}")
-    public ResponseEntity<Page<MvtStkResponse>> mvtStkArticle(
+    public ResponseEntity<PageResponse<MvtStkResponse>> mvtStkArticle(
             @Parameter(description = "Identifiant de l'article", example = "1") @PathVariable Long idArticle,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(mvtStkService.mvtStkArticle(idArticle, pageable));
+        return ResponseEntity.ok(PageResponse.from(mvtStkService.mvtStkArticle(idArticle, pageable)));
     }
 
     @Operation(summary = "Stock réel d'un article", description = "Calcule la quantité en stock réelle d'un article à partir de ses mouvements")
