@@ -2,6 +2,7 @@ package cm.kfokam.stock.article;
 
 import cm.kfokam.stock.article.dto.ArticleRequest;
 import cm.kfokam.stock.article.dto.ArticleResponse;
+import cm.kfokam.stock.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -73,8 +73,8 @@ public class ArticleController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<Page<ArticleResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(articleService.getAll(pageable));
+    public ResponseEntity<PageResponse<ArticleResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(articleService.getAll(pageable)));
     }
 
     @Operation(summary = "Modifier un article", description = "Met à jour les informations d'un article existant")

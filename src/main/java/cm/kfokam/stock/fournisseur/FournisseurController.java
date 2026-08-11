@@ -1,5 +1,6 @@
 package cm.kfokam.stock.fournisseur;
 
+import cm.kfokam.stock.common.dto.PageResponse;
 import cm.kfokam.stock.fournisseur.dto.FournisseurRequest;
 import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -72,8 +72,8 @@ public class FournisseurController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<Page<FournisseurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(fournisseurService.getAll(pageable));
+    public ResponseEntity<PageResponse<FournisseurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(fournisseurService.getAll(pageable)));
     }
 
     @Operation(summary = "Modifier un fournisseur", description = "Met à jour les informations d'un fournisseur existant")

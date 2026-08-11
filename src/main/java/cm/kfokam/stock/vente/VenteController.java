@@ -1,5 +1,6 @@
 package cm.kfokam.stock.vente;
 
+import cm.kfokam.stock.common.dto.PageResponse;
 import cm.kfokam.stock.vente.dto.VenteRequest;
 import cm.kfokam.stock.vente.dto.VenteResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -83,8 +83,8 @@ public class VenteController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<Page<VenteResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(venteService.getAll(pageable));
+    public ResponseEntity<PageResponse<VenteResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(venteService.getAll(pageable)));
     }
 
     @Operation(summary = "Supprimer une vente", description = "Supprime définitivement une vente")

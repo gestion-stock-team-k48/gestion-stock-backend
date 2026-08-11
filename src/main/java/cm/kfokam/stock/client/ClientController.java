@@ -2,6 +2,7 @@ package cm.kfokam.stock.client;
 
 import cm.kfokam.stock.client.dto.ClientRequest;
 import cm.kfokam.stock.client.dto.ClientResponse;
+import cm.kfokam.stock.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -72,8 +72,8 @@ public class ClientController {
     })
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<Page<ClientResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(clientService.getAll(pageable));
+    public ResponseEntity<PageResponse<ClientResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(clientService.getAll(pageable)));
     }
 
     @Operation(summary = "Modifier un client", description = "Met à jour les informations d'un client existant")
