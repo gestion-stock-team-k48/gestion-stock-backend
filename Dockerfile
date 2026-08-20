@@ -34,10 +34,15 @@ RUN java -Djarmode=layertools -jar target/*.jar extract --destination /couches
 # ── Exécution ────────────────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
+# `apk upgrade` d'abord : entre deux publications de l'image Temurin, Alpine corrige ses
+# paquets, et c'est là que dorment les failles qu'un scanner remonte. C'est sur cette ligne
+# que le pipeline a buté la première fois, sur un openssl en retard de quatre correctifs.
+#
 # `wget` vient de busybox, déjà présent. L'utilisateur n'est pas root : un processus
 # applicatif n'a aucune raison de l'être, et une évasion depuis le conteneur ne donnerait
 # alors rien d'intéressant.
-RUN addgroup -S stock && adduser -S -G stock -H -s /sbin/nologin stock
+RUN apk upgrade --no-cache \
+    && addgroup -S stock && adduser -S -G stock -H -s /sbin/nologin stock
 
 WORKDIR /application
 
