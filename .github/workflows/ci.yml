@@ -71,6 +71,28 @@ jobs:
           java-version: '21'
           cache: maven
 
+      # La distribution Maven que le wrapper télécharge n'est pas dans le cache de
+      # `setup-java`, qui ne garde que `~/.m2/repository`. Sans ce cache, chaque job la
+      # retire du réseau — et un pipeline qui tombe sur un aléa de téléchargement est un
+      # pipeline qu'on finit par relancer sans lire.
+      - name: Cache de la distribution Maven
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
+      # Première invocation, isolée et réessayée : elle ne fait que provoquer le
+      # téléchargement. Le vrai travail part ensuite avec la distribution déjà en place.
+      - name: Amorçage du wrapper
+        run: |
+          for tentative in 1 2 3; do
+            if sh mvnw -B -N -q validate; then exit 0; fi
+            echo "tentative $tentative échouée, nouvelle tentative dans 15 s"
+            sleep 15
+          done
+          echo "le wrapper Maven n'a pas pu récupérer sa distribution"
+          exit 1
+
       # MinIO ne peut pas être déclaré en `services` : l'image exige `server /data` en
       # argument, et un conteneur de service n'accepte pas qu'on lui change sa commande.
       #
@@ -154,6 +176,28 @@ jobs:
         with:
           name: rapports
           path: target
+
+      # La distribution Maven que le wrapper télécharge n'est pas dans le cache de
+      # `setup-java`, qui ne garde que `~/.m2/repository`. Sans ce cache, chaque job la
+      # retire du réseau — et un pipeline qui tombe sur un aléa de téléchargement est un
+      # pipeline qu'on finit par relancer sans lire.
+      - name: Cache de la distribution Maven
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
+      # Première invocation, isolée et réessayée : elle ne fait que provoquer le
+      # téléchargement. Le vrai travail part ensuite avec la distribution déjà en place.
+      - name: Amorçage du wrapper
+        run: |
+          for tentative in 1 2 3; do
+            if sh mvnw -B -N -q validate; then exit 0; fi
+            echo "tentative $tentative échouée, nouvelle tentative dans 15 s"
+            sleep 15
+          done
+          echo "le wrapper Maven n'a pas pu récupérer sa distribution"
+          exit 1
 
       # Le scanner Maven plutôt que l'action générique : il lit le POM, connaît donc les
       # chemins de compilation et n'a pas besoin qu'on les lui répète.
