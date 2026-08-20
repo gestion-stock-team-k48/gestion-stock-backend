@@ -84,6 +84,14 @@ class OpenApiAuditFieldsTest {
             List<String> fieldNames = StreamSupport.stream(
                     java.util.Spliterators.spliteratorUnknownSize(properties.fieldNames(), 0), false).toList();
 
+            // `doesNotContainAnyElementsOf` passe sur une liste vide : un schéma sans aucune
+            // propriété — parce que le DTO a été renommé, ou que la génération a échoué —
+            // ferait donc passer ce test sans rien vérifier. On exige d'abord qu'il y ait
+            // quelque chose à examiner.
+            assertThat(fieldNames)
+                    .as("Le schéma OpenAPI de %s doit déclarer des propriétés", dto)
+                    .isNotEmpty();
+
             assertThat(fieldNames)
                     .as("%s ne doit exiger aucun champ d'audit en entrée", dto)
                     .doesNotContainAnyElementsOf(AUDIT_FIELDS);
