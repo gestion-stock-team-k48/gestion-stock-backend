@@ -12,7 +12,7 @@ import cm.kfokam.stock.mvtstk.dto.MvtStkRequest;
 import cm.kfokam.stock.mvtstk.model.SourceMvtStk;
 import cm.kfokam.stock.vente.dto.VenteRequest;
 import cm.kfokam.stock.vente.dto.VenteResponse;
-import cm.kfokam.stock.vente.dto.ligneVente.LigneVenteRequest;
+import cm.kfokam.stock.vente.dto.lignevente.LigneVenteRequest;
 import cm.kfokam.stock.vente.model.LigneVente;
 import cm.kfokam.stock.vente.model.Vente;
 import jakarta.persistence.EntityManager;

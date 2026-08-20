@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -43,7 +44,7 @@ class ArticleControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private ArticleService articleService;
 
     private ArticleRequest validRequest() {
@@ -258,7 +259,7 @@ class ArticleControllerTest {
 
     @Test
     void delete_shouldReturn404_whenNotFound() throws Exception {
-        org.mockito.Mockito.doThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"))
+        doThrow(new EntityNotFoundException("Article introuvable avec l'id : 99"))
                 .when(articleService).delete(99L);
 
         mockMvc.perform(delete("/articles/{id}", 99L))

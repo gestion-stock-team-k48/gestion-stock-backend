@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -53,7 +54,7 @@ class UtilisateurControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private UtilisateurService utilisateurService;
 
     private UtilisateurRequest validRequest() {
@@ -314,7 +315,7 @@ class UtilisateurControllerTest {
 
     @Test
     void delete_shouldReturn404_whenNotFound() throws Exception {
-        org.mockito.Mockito.doThrow(new EntityNotFoundException("Utilisateur introuvable avec l'id : 99"))
+        doThrow(new EntityNotFoundException("Utilisateur introuvable avec l'id : 99"))
                 .when(utilisateurService).delete(99L);
 
         mockMvc.perform(delete("/utilisateurs/{id}", 99L))
@@ -352,7 +353,7 @@ class UtilisateurControllerTest {
         authenticateAsUser(1L);
         ChangePasswordRequest request = new ChangePasswordRequest("wrong-old-password", "NewP@ss1!");
 
-        org.mockito.Mockito.doThrow(new BadCredentialsException("L'ancien mot de passe est incorrect"))
+        doThrow(new BadCredentialsException("L'ancien mot de passe est incorrect"))
                 .when(utilisateurService).changePassword(1L, request);
 
         mockMvc.perform(post("/utilisateurs/change-password")

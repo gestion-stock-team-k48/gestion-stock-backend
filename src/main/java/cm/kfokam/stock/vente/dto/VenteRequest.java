@@ -1,6 +1,6 @@
 package cm.kfokam.stock.vente.dto;
 
-import cm.kfokam.stock.vente.dto.ligneVente.LigneVenteRequest;
+import cm.kfokam.stock.vente.dto.lignevente.LigneVenteRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;

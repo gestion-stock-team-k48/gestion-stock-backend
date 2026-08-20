@@ -1,6 +1,6 @@
 package cm.kfokam.stock.vente.dto;
 
-import cm.kfokam.stock.vente.dto.ligneVente.LigneVenteResponse;
+import cm.kfokam.stock.vente.dto.lignevente.LigneVenteResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

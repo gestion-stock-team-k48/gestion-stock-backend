@@ -1,4 +1,4 @@
-package cm.kfokam.stock.vente.dto.ligneVente;
+package cm.kfokam.stock.vente.dto.lignevente;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
