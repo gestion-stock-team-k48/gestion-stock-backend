@@ -9,7 +9,7 @@ import cm.kfokam.stock.dashboard.dto.DashboardStatsResponse;
 import cm.kfokam.stock.dashboard.dto.TopArticleVenduResponse;
 import cm.kfokam.stock.vente.VenteService;
 import cm.kfokam.stock.vente.dto.VenteResponse;
-import cm.kfokam.stock.vente.dto.ligneVente.LigneVenteResponse;
+import cm.kfokam.stock.vente.dto.lignevente.LigneVenteResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

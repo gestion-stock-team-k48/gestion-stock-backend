@@ -22,6 +22,9 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 class EmailServiceImpl implements EmailService {
 
+    /** Nom de la variable de gabarit portant le code de la commande. */
+    private static final String VARIABLE_CODE_COMMANDE = "codeCommande";
+
     private static final String TEMPLATE_CONFIRMATION_CLIENT = "email/commande-client-confirmation";
     private static final String TEMPLATE_ORDRE_FOURNISSEUR = "email/commande-fournisseur-ordre";
     private static final String TEMPLATE_RESET_PASSWORD = "email/reset-password";
@@ -43,7 +46,7 @@ class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("clientNom", commande.clientNom());
         context.setVariable("clientPrenom", commande.clientPrenom());
-        context.setVariable("codeCommande", commande.codeCommande());
+        context.setVariable(VARIABLE_CODE_COMMANDE, commande.codeCommande());
         context.setVariable("dateCommande", commande.dateCommande());
         context.setVariable("lignes", commande.lignes());
         context.setVariable("totalTtc", commande.totalTtc());
@@ -57,7 +60,7 @@ class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("fournisseurNom", commande.fournisseurNom());
         context.setVariable("fournisseurPrenom", commande.fournisseurPrenom());
-        context.setVariable("codeCommande", commande.codeCommande());
+        context.setVariable(VARIABLE_CODE_COMMANDE, commande.codeCommande());
         context.setVariable("dateCommande", commande.dateCommande());
         context.setVariable("lignes", commande.lignes());
         context.setVariable("totalTtc", commande.totalTtc());
@@ -90,7 +93,7 @@ class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("clientNom", commande.clientNom());
         context.setVariable("clientPrenom", commande.clientPrenom());
-        context.setVariable("codeCommande", commande.codeCommande());
+        context.setVariable(VARIABLE_CODE_COMMANDE, commande.codeCommande());
         context.setVariable("etatCommande", commande.etatCommande().name());
 
         envoyer(destinataire, "Mise à jour de votre commande %s".formatted(commande.codeCommande()),
@@ -102,7 +105,7 @@ class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("fournisseurNom", commande.fournisseurNom());
         context.setVariable("fournisseurPrenom", commande.fournisseurPrenom());
-        context.setVariable("codeCommande", commande.codeCommande());
+        context.setVariable(VARIABLE_CODE_COMMANDE, commande.codeCommande());
         context.setVariable("etatCommande", commande.etatCommande().name());
 
         envoyer(destinataire, "Mise à jour de votre commande %s".formatted(commande.codeCommande()),

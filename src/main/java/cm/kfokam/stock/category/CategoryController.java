@@ -5,7 +5,6 @@ import cm.kfokam.stock.category.dto.CategoryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,13 +31,11 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @Operation(summary = "Créer une catégorie", description = "Ajoute une nouvelle catégorie pour l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Catégorie créée"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "409", description = "Code catégorie déjà utilisé")
-    })
+    @ApiResponse(responseCode = "201", description = "Catégorie créée")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "409", description = "Code catégorie déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(@Valid @RequestBody CategoryRequest request) {
@@ -47,12 +44,10 @@ public class CategoryController {
     }
 
     @Operation(summary = "Récupérer une catégorie", description = "Retourne une catégorie par son identifiant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Catégorie trouvée"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Catégorie introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Catégorie trouvée")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Catégorie introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> getById(
@@ -61,11 +56,9 @@ public class CategoryController {
     }
 
     @Operation(summary = "Lister les catégories", description = "Retourne toutes les catégories de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des catégories"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé")
-    })
+    @ApiResponse(responseCode = "200", description = "Liste des catégories")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getAll() {
@@ -73,14 +66,12 @@ public class CategoryController {
     }
 
     @Operation(summary = "Modifier une catégorie", description = "Met à jour les informations d'une catégorie existante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Catégorie mise à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Catégorie introuvable"),
-            @ApiResponse(responseCode = "409", description = "Code catégorie déjà utilisé")
-    })
+    @ApiResponse(responseCode = "200", description = "Catégorie mise à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Catégorie introuvable")
+    @ApiResponse(responseCode = "409", description = "Code catégorie déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> update(
@@ -90,13 +81,11 @@ public class CategoryController {
     }
 
     @Operation(summary = "Supprimer une catégorie", description = "Supprime définitivement une catégorie")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Catégorie supprimée"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Catégorie introuvable"),
-            @ApiResponse(responseCode = "409", description = "La catégorie contient encore des articles")
-    })
+    @ApiResponse(responseCode = "204", description = "Catégorie supprimée")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Catégorie introuvable")
+    @ApiResponse(responseCode = "409", description = "La catégorie contient encore des articles")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -49,7 +50,7 @@ class CommandeClientControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private CommandeClientService commandeClientService;
 
     private CommandeClientRequest validRequest() {
@@ -237,7 +238,7 @@ class CommandeClientControllerTest {
 
     @Test
     void delete_shouldReturn404_whenNotFound() throws Exception {
-        org.mockito.Mockito.doThrow(new EntityNotFoundException("Commande client introuvable avec l'id : 99"))
+        doThrow(new EntityNotFoundException("Commande client introuvable avec l'id : 99"))
                 .when(commandeClientService).delete(99L);
 
         mockMvc.perform(delete("/commandes-client/{id}", 99L))
@@ -246,7 +247,7 @@ class CommandeClientControllerTest {
 
     @Test
     void delete_shouldReturn409_whenCommandeIsLivree() throws Exception {
-        org.mockito.Mockito.doThrow(new InvalidOperationException(
+        doThrow(new InvalidOperationException(
                         "Impossible de supprimer une commande client à l'état LIVREE afin de préserver l'intégrité des mouvements de stock."))
                 .when(commandeClientService).delete(1L);
 

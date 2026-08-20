@@ -6,7 +6,6 @@ import cm.kfokam.stock.vente.dto.VenteResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,14 +31,12 @@ public class VenteController {
     private final VenteService venteService;
 
     @Operation(summary = "Créer une vente", description = "Enregistre une vente et déclenche la sortie de stock associée")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Vente créée"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Article introuvable"),
-            @ApiResponse(responseCode = "409", description = "Code de vente déjà utilisé ou stock insuffisant")
-    })
+    @ApiResponse(responseCode = "201", description = "Vente créée")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Article introuvable")
+    @ApiResponse(responseCode = "409", description = "Code de vente déjà utilisé ou stock insuffisant")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<VenteResponse> create(@Valid @RequestBody VenteRequest request) {
@@ -48,12 +45,10 @@ public class VenteController {
     }
 
     @Operation(summary = "Récupérer une vente", description = "Retourne une vente par son identifiant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Vente trouvée"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Vente introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Vente trouvée")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Vente introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<VenteResponse> getById(
@@ -62,12 +57,10 @@ public class VenteController {
     }
 
     @Operation(summary = "Récupérer une vente par code", description = "Retourne une vente par son code unique")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Vente trouvée"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Vente introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Vente trouvée")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Vente introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/code/{code}")
     public ResponseEntity<VenteResponse> getByCode(
@@ -76,11 +69,9 @@ public class VenteController {
     }
 
     @Operation(summary = "Lister les ventes", description = "Retourne toutes les ventes de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des ventes"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé")
-    })
+    @ApiResponse(responseCode = "200", description = "Liste des ventes")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<PageResponse<VenteResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -88,13 +79,11 @@ public class VenteController {
     }
 
     @Operation(summary = "Supprimer une vente", description = "Supprime définitivement une vente")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Vente supprimée"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Vente introuvable"),
-            @ApiResponse(responseCode = "409", description = "Suppression interdite : la vente a déjà généré des mouvements de stock")
-    })
+    @ApiResponse(responseCode = "204", description = "Vente supprimée")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Vente introuvable")
+    @ApiResponse(responseCode = "409", description = "Suppression interdite : la vente a déjà généré des mouvements de stock")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
