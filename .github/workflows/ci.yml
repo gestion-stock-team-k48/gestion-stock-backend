@@ -63,10 +63,35 @@ jobs:
           java-version: '21'
           cache: maven
 
+      # MinIO ne peut pas être déclaré en `services` : l'image exige `server /data` en
+      # argument, et un conteneur de service n'accepte pas qu'on lui change sa commande.
+      #
+      # Il est nécessaire, et pas seulement confortable : trois tests démarrent le contexte
+      # Spring complet, donc `MinioFileStorageServiceImpl`, qui crée son bucket dans son
+      # `@PostConstruct`. Sans serveur en face, le contexte ne se charge pas et six tests
+      # tombent — ce sont des tests d'intégration, quand bien même rien dans leur nom ne le
+      # dit.
+      - name: MinIO
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadminpassword \
+            minio/minio:RELEASE.2024-01-18T22-51-28Z server /data
+          for _ in $(seq 1 30); do
+            if curl -sf http://localhost:9000/minio/health/live > /dev/null; then
+              echo "MinIO prêt"; exit 0
+            fi
+            sleep 2
+          done
+          echo "MinIO n'a pas démarré"; docker logs minio; exit 1
+
       # `verify` couvre `test` puis déclenche le rapport JaCoCo, attaché à cette phase.
       - name: Vérification et couverture
         env:
           DB_URL: jdbc:postgresql://localhost:5432/gestion_stock_db
+          MINIO_URL: http://localhost:9000
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadminpassword
         run: sh mvnw -B verify
 
       - name: Rapports de test
