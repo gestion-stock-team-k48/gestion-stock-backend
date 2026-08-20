@@ -143,7 +143,7 @@ jobs:
       # Trivy en mode système de fichiers lit le `pom.xml` et compare aux avis publiés : pas
       # de compilation, pas de base de vulnérabilités à entretenir soi-même.
       - name: Trivy sur les dépendances
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -204,7 +204,7 @@ jobs:
           provenance: false
 
       - name: Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: analyse:local
           format: sarif
@@ -220,7 +220,7 @@ jobs:
           category: trivy-image
 
       - name: Échec sur vulnérabilité corrigeable
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: analyse:local
           format: table
