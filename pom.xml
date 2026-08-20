@@ -27,8 +27,17 @@
 		<okhttp.version>4.12.0</okhttp.version>
 		<bouncycastle.version>1.84</bouncycastle.version>
 		<jacoco.version>0.8.12</jacoco.version>
-		<!-- Chemin agrégé du rapport de couverture : SonarQube le lit à cet endroit. -->
+		<!-- ── SonarCloud ──────────────────────────────
+		     Le scanner Maven ne lit pas `sonar-project.properties` : il ne connaît que le
+		     POM. Ces propriétés doivent donc vivre ici, et nulle part ailleurs. -->
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.organization>gestion-stock-team-k48</sonar.organization>
+		<sonar.projectKey>gestion-stock-team-k48_gestion-stock-backend</sonar.projectKey>
 		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.junit.reportPaths>${project.build.directory}/surefire-reports</sonar.junit.reportPaths>
+		<!-- Le code produit par MapStruct et Lombok est régénéré à chaque compilation :
+		     l'analyser reviendrait à relever des défauts que personne ne peut corriger. -->
+		<sonar.exclusions>**/target/**,**/generated/**</sonar.exclusions>
 		<!-- Le pilote PostgreSQL est géré par Spring Boot ; la surcharge ne sert qu'à
 		     prendre le correctif de sécurité avant que Boot ne le reprenne. À retirer
 		     dès que la version gérée le dépasse. -->

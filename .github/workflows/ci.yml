@@ -149,13 +149,14 @@ jobs:
 
       # Le scanner Maven plutôt que l'action générique : il lit le POM, connaît donc les
       # chemins de compilation et n'a pas besoin qu'on les lui répète.
+      # La clé de projet, l'organisation et l'URL sont dans le POM : le scanner Maven ne
+      # lit pas `sonar-project.properties`, contrairement au scanner générique.
       - name: Analyse
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >-
           sh mvnw -B -DskipTests
           org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.host.url=https://sonarcloud.io
 
   # ── Dépendances ────────────────────────────────────────────────────────────────────────
   dependances:
