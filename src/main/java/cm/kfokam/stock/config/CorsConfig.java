@@ -1,5 +1,6 @@
 package cm.kfokam.stock.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -9,7 +10,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Configuration CORS dédiée aux frontends Angular et React en développement.
+ * Configuration CORS.
  * <p>
  * Le {@link CorsConfigurationSource} produit ici est branché dans
  * {@link cm.kfokam.stock.auth.SecurityConfig} via {@code HttpSecurity.cors(...)}, ce qui
@@ -20,13 +21,25 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    // Ports par défaut des serveurs de développement : Angular CLI (4200),
-    // Create React App (3000) et Vite (5173).
-    private static final List<String> ALLOWED_ORIGINS = List.of(
-            "http://localhost:4200",
-            "http://localhost:3000",
-            "http://localhost:5173"
-    );
+    /**
+     * Origines autorisées, lues de la configuration.
+     *
+     * Les valeurs par défaut sont les ports des serveurs de développement — Angular CLI,
+     * Create React App, Vite — pour qu'une machine de développeur n'ait rien à exporter.
+     *
+     * Tout déploiement doit renseigner la sienne, y compris quand l'interface et l'API
+     * partagent une origine derrière un reverse proxy : le navigateur joint un en-tête
+     * `Origin` à toute requête qui n'est ni `GET` ni `HEAD`, même en même origine, et Spring
+     * la traite alors comme une requête CORS. Une origine absente de cette liste se voit
+     * répondre « Invalid CORS request » en 403 — ce qui ne se remarque pas en interrogeant
+     * l'API avec `curl`, qui n'envoie pas cet en-tête.
+     */
+    private final List<String> allowedOrigins;
+
+    public CorsConfig(
+            @Value("${application.cors.allowed-origins}") List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
 
     private static final List<String> ALLOWED_METHODS =
             List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
@@ -48,7 +61,7 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(ALLOWED_ORIGINS);
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(ALLOWED_METHODS);
         configuration.setAllowedHeaders(ALLOWED_HEADERS);
         configuration.setExposedHeaders(EXPOSED_HEADERS);

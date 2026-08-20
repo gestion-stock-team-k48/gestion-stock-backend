@@ -82,6 +82,13 @@ application:
         expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 jours en millisecondes
     reset-token:
       expiration-minutes: ${RESET_TOKEN_EXPIRATION_MINUTES:30}
+  # ── Origines autorisées (CORS) ────────────────
+  # Séparées par des virgules. Les défauts couvrent les serveurs de développement ; un
+  # déploiement renseigne l'adresse publique de l'interface, même si elle partage l'origine
+  # de l'API derrière un reverse proxy.
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:3000,http://localhost:5173}
+
   mail:
     from: ${MAIL_FROM:gestion.stock.notif@gmail.com}
     from-name: ${MAIL_FROM_NAME:Gestion Stock}
