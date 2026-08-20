@@ -100,7 +100,7 @@ class VenteServiceImplTest {
                 .build();
 
         request = new VenteRequest(
-                null, "Vente comptoir",
+                null, null, "Vente comptoir",
                 List.of(new LigneVenteRequest(1L, new BigDecimal("2")))
         );
 
@@ -132,9 +132,49 @@ class VenteServiceImplTest {
     }
 
     @Test
+    void create_shouldKeepDateVente_whenProvided() {
+        Instant dateFournie = Instant.parse("2026-03-14T09:20:00Z");
+        VenteRequest requestDatee = new VenteRequest(
+                null, dateFournie, "Vente comptoir",
+                List.of(new LigneVenteRequest(1L, new BigDecimal("2")))
+        );
+
+        when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
+        when(venteMapper.toEntity(requestDatee)).thenReturn(new Vente());
+        when(articleService.getById(1L)).thenReturn(articleResponse);
+        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
+        when(venteRepository.save(any(Vente.class))).thenReturn(vente);
+        when(venteMapper.toResponse(vente)).thenReturn(response);
+
+        venteService.create(requestDatee);
+
+        verify(venteRepository).save(argThat((Vente enregistree) ->
+                dateFournie.equals(enregistree.getDateVente())));
+    }
+
+    @Test
+    void create_shouldFallBackToNow_whenDateVenteIsAbsent() {
+        Instant avant = Instant.now();
+
+        when(venteRepository.countByCodeStartingWithAndIdEntreprise(anyString(), eq(ENTREPRISE_ID))).thenReturn(0L);
+        when(venteMapper.toEntity(request)).thenReturn(new Vente());
+        when(articleService.getById(1L)).thenReturn(articleResponse);
+        when(entityManager.getReference(Article.class, 1L)).thenReturn(article);
+        when(venteRepository.save(any(Vente.class))).thenReturn(vente);
+        when(venteMapper.toResponse(vente)).thenReturn(response);
+
+        venteService.create(request);
+
+        verify(venteRepository).save(argThat((Vente enregistree) ->
+                enregistree.getDateVente() != null
+                        && !enregistree.getDateVente().isBefore(avant)
+                        && !enregistree.getDateVente().isAfter(Instant.now())));
+    }
+
+    @Test
     void create_shouldVerifyEachArticleExistence_viaArticleService() {
         VenteRequest multiLineRequest = new VenteRequest(
-                null, "Vente comptoir",
+                null, null, "Vente comptoir",
                 List.of(new LigneVenteRequest(1L, new BigDecimal("2")), new LigneVenteRequest(2L, new BigDecimal("1")))
         );
         Article article2 = Article.builder().id(2L).code("ART-02").designation("Souris").build();
@@ -192,7 +232,7 @@ class VenteServiceImplTest {
                 .build();
 
         VenteRequest multiLineRequest = new VenteRequest(
-                null, "Vente comptoir",
+                null, null, "Vente comptoir",
                 List.of(new LigneVenteRequest(1L, new BigDecimal("2")), new LigneVenteRequest(2L, new BigDecimal("3")))
         );
         ArticleResponse articleResponse2 = new ArticleResponse(2L, "ART-02", "Souris",
