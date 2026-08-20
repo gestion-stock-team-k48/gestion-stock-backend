@@ -48,7 +48,7 @@ class VenteServiceImpl implements VenteService {
 
         Vente vente = venteMapper.toEntity(request);
         vente.setCode(code);
-        vente.setDateVente(Instant.now());
+        vente.setDateVente(request.dateVente() != null ? request.dateVente() : Instant.now());
         vente.setIdEntreprise(idEntreprise);
 
         List<LigneVente> lignes = buildLignes(request.lignes(), vente);
