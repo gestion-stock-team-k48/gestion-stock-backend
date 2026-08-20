@@ -55,6 +55,17 @@ public class SecurityConfig {
                 // (voir CorsConfig) : il s'exécute avant l'autorisation ci-dessous et répond directement
                 // aux requêtes de pre-flight OPTIONS sans jamais les faire passer par .authenticated().
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                // CSRF désactivé, et c'est le bon choix ici — pas un oubli.
+                //
+                // Une attaque CSRF repose sur le navigateur qui joint tout seul une preuve
+                // d'identité à une requête partie d'un autre site : un cookie de session.
+                // Cette API n'en émet aucun. La session est STATELESS (voir plus bas) et
+                // l'identité voyage dans un en-tête `Authorization: Bearer` que seul du
+                // JavaScript de notre origine peut poser. Un formulaire hostile ne peut pas
+                // fabriquer cet en-tête, et le navigateur ne l'ajoute jamais de lui-même.
+                //
+                // Ce raisonnement tombe le jour où un jeton passerait par un cookie. Si cela
+                // devait arriver, la protection CSRF redevient obligatoire.
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Filet de sécurité explicite : même si CorsFilter court-circuite déjà le pre-flight,
