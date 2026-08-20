@@ -1,0 +1,21 @@
+# Tout ce qui n'entre pas dans le contexte de build. Un contexte étroit accélère le build et
+# évite qu'un fichier local finisse par accident dans une couche d'image.
+
+target/
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+.mvn/wrapper/maven-wrapper.jar
+mvnw
+mvnw.cmd
+docker-compose.yml
+compose.yml
+Dockerfile
+.dockerignore
+.github/
+README.md
+*.md
+.env
+.env.*

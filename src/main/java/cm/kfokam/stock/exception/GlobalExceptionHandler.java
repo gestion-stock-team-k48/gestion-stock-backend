@@ -1,7 +1,158 @@
 package cm.kfokam.stock.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEntityNotFound(EntityNotFoundException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateCodeException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateCode(DuplicateCodeException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidStateTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStateTransition(InvalidStateTransitionException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(StockInsuffisantException.class)
+    public ResponseEntity<ErrorResponse> handleStockInsuffisant(StockInsuffisantException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOperation(InvalidOperationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    // Filet de sécurité : toute violation de contrainte d'intégrité non anticipée par une
+    // vérification métier explicite (InvalidOperationException) remonte ici plutôt qu'en 500 brut.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT,
+                "Impossible d'effectuer cette opération car la ressource est référencée par d'autres données.", request);
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    // Échec d'un envoi d'email jugé critique pour l'opération (ex: jeton de réinitialisation de mot
+    // de passe) — la transaction appelante a déjà été annulée par Spring (RuntimeException non
+    // catchée). On journalise la cause complète côté serveur mais on ne renvoie qu'un message générique
+    // au client : ni l'adresse du destinataire, ni le détail SMTP n'ont à fuiter dans la réponse HTTP.
+    @ExceptionHandler(EmailDeliveryException.class)
+    public ResponseEntity<ErrorResponse> handleEmailDelivery(EmailDeliveryException ex, HttpServletRequest request) {
+        log.error("Échec d'envoi d'un email critique sur {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE,
+                "Le service d'envoi d'emails est momentanément indisponible. Veuillez réessayer plus tard.", request);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect", request);
+    }
+
+    // Message générique ("Access Denied") pour la plupart des refus de rôle, mais un message dédié
+    // et plus parlant pour les suppressions, où la conséquence d'un refus est la plus sensible.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        String message = HttpMethod.DELETE.matches(request.getMethod())
+                ? "Vous n'avez pas les autorisations nécessaires (Rôle requis) pour exécuter cette suppression."
+                : ex.getMessage();
+        return buildResponse(HttpStatus.FORBIDDEN, message, request);
+    }
+
+    // Un champ peut porter plusieurs contraintes (@NotBlank + @Size, ...) : on ne garde que le
+    // premier message par champ (merge function ci-dessous), suffisant pour l'affichage sous un
+    // input Angular/React, et on préserve l'ordre de déclaration des erreurs (LinkedHashMap).
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        Map<String, String> validationErrors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        fieldError -> fieldError.getDefaultMessage() == null ? "Valeur invalide" : fieldError.getDefaultMessage(),
+                        (first, second) -> first,
+                        LinkedHashMap::new));
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "Un ou plusieurs champs sont invalides. Voir 'validationErrors' pour le détail.",
+                request, validationErrors);
+    }
+
+    // Corps de requête illisible : JSON malformé, champ enum/nombre non convertible, etc.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "Le corps de la requête est illisible ou mal formé.", request);
+    }
+
+    // Ex: /articles/{id} appelé avec un id non numérique -> conversion de type échouée avant
+    // même d'atteindre le contrôleur.
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        String message = "Le paramètre '%s' a une valeur invalide : '%s'".formatted(ex.getName(), ex.getValue());
+        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ErrorResponse> handleFileStorage(FileStorageException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
+    }
+
+    // Filet de sécurité final : toute exception non anticipée par un handler dédié ci-dessus garde le
+    // même format ErrorResponse que le reste de l'API, plutôt que la page d'erreur par défaut de Spring
+    // Boot. Toujours placé en dernier : Spring choisit le handler le plus spécifique, peu importe l'ordre
+    // de déclaration, donc les handlers ci-dessus restent prioritaires.
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
+        log.error("Erreur interne inattendue sur {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Une erreur interne est survenue. Veuillez réessayer plus tard.", request);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, HttpServletRequest request) {
+        return buildResponse(status, message, request, null);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, HttpServletRequest request,
+                                                          Map<String, String> validationErrors) {
+        ErrorResponse body = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                request.getRequestURI(),
+                validationErrors
+        );
+        return ResponseEntity.status(status).body(body);
+    }
 }
