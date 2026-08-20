@@ -31,7 +31,12 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/swagger-resources/**",
-            "/webjars/**"
+            "/webjars/**",
+            // Sonde de vie, lue par le HEALTHCHECK de l'image et par la condition
+            // `service_healthy` du compose : elle doit répondre avant toute authentification,
+            // et ne divulgue rien puisque `show-details` vaut `never`.
+            "/actuator/health",
+            "/actuator/health/**"
     };
 
     private final JwtService jwtService;

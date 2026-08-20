@@ -1,29 +1,37 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api/v1
+  # Derrière nginx, l'adresse du client et le schéma arrivent dans les en-têtes X-Forwarded-*.
+  # Sans cette ligne, les URL absolues que produit l'application (liens d'email, redirections)
+  # porteraient l'adresse interne du conteneur.
+  forward-headers-strategy: framework
 
 spring:
   application:
     name: gestion-stock-backend
 
   # ── Configuration Base de données PostgreSQL ──
+  # Les valeurs par défaut sont celles du docker-compose de développement : une machine de
+  # développeur démarre sans rien exporter, un conteneur reçoit tout par l'environnement.
   datasource:
-    url: jdbc:postgresql://localhost:5433/gestion_stock_db
-    username: postgres
-    password: postgrespassword
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/gestion_stock_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgrespassword}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
 
   # ── Configuration JPA / Hibernate ─────────────
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:true}
     properties:
       hibernate:
         format_sql: true
-
 
   # ── Configuration Flyway (versionnement de la BDD) ──
   flyway:
@@ -47,33 +55,36 @@ spring:
     properties:
       mail:
         smtp:
-          auth: false
+          auth: ${MAIL_SMTP_AUTH:false}
           starttls:
-            enable: false
+            enable: ${MAIL_SMTP_STARTTLS:false}
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
 
 # ── Configuration MinIO ─────────────────────────
 minio:
-  url: http://localhost:9005
-  access-key: minioadmin
-  secret-key: minioadminpassword
-  bucket-name: gestion-stock-bucket
+  url: ${MINIO_URL:http://localhost:9005}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadminpassword}
+  bucket-name: ${MINIO_BUCKET:gestion-stock-bucket}
 
 # ── Configuration JWT ───────────────────────────
+# La clé par défaut ne vaut que pour le développement local : elle est publique, puisque
+# versionnée. Tout déploiement passe JWT_SECRET_KEY, faute de quoi n'importe qui peut forger
+# un jeton valide.
 application:
   security:
     jwt:
-      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      expiration: 86400000 # 1 jour en millisecondes
+      secret-key: ${JWT_SECRET_KEY:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      expiration: ${JWT_EXPIRATION:86400000} # 1 jour en millisecondes
       refresh-token:
-        expiration: 604800000 # 7 jours en millisecondes
+        expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 jours en millisecondes
     reset-token:
-      expiration-minutes: 30
+      expiration-minutes: ${RESET_TOKEN_EXPIRATION_MINUTES:30}
   mail:
-    from: gestion.stock.notif@gmail.com
-    from-name: Gestion Stock
+    from: ${MAIL_FROM:gestion.stock.notif@gmail.com}
+    from-name: ${MAIL_FROM_NAME:Gestion Stock}
 
 # ── Configuration Swagger / OpenAPI ─────────────
 springdoc:
@@ -81,3 +92,27 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# ── Supervision ─────────────────────────────────
+# Seul `health` est exposé : c'est ce que lisent le HEALTHCHECK de l'image et la condition
+# `service_healthy` du compose. Les détails restent masqués, ils décrivent l'infrastructure.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        # Ce que la sonde interroge : l'application est-elle en état de servir ? La base en
+        # fait partie, pas le SMTP ni le stockage d'objets. Une panne de Mailpit empêche
+        # d'envoyer un email, elle n'empêche pas de lire un article : sortir l'API de la
+        # rotation pour ça aggraverait l'incident au lieu de le contenir.
+        readiness:
+          include: readinessState, db
+        liveness:
+          include: livenessState

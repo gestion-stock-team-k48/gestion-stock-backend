@@ -24,6 +24,9 @@
 		<jjwt.version>0.12.3</jjwt.version>
 		<springdoc.version>2.5.0</springdoc.version>
 		<minio.version>8.5.7</minio.version>
+		<jacoco.version>0.8.12</jacoco.version>
+		<!-- Chemin agrégé du rapport de couverture : SonarQube le lit à cet endroit. -->
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<!-- Spring Boot 3.2.5 manages Flyway 9.22.3, which predates the
 		     flyway-database-postgresql module (split out of flyway-core in 10.0.0).
 		     Override to 10.20.1 so both artifacts resolve to a matching version. -->
@@ -33,6 +36,11 @@
 	<dependencies>
 
 		<!-- ── Spring Boot Core ──────────────────────────── -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -184,6 +192,28 @@
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
+			</plugin>
+
+			<!-- ── JaCoCo (couverture, lue par SonarQube) ── -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 		</plugins>
