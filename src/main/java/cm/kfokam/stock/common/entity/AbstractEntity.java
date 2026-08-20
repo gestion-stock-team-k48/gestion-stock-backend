@@ -1,6 +1,7 @@
 package cm.kfokam.stock.common.entity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
@@ -35,7 +36,17 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class AbstractEntity {
+public abstract class AbstractEntity implements Serializable {
+
+    /*
+     * Sérialisable parce qu'`Utilisateur` l'est : Spring Security le stocke comme principal,
+     * et `UserDetails` étend `Serializable`. Sans cela, l'association `Utilisateur.entreprise`
+     * pointe vers un objet non sérialisable, et toute tentative de sérialiser le principal —
+     * une session distribuée, un cache, un mécanisme de « remember-me » — échoue à
+     * l'exécution sur un `NotSerializableException` que rien ne laissait prévoir.
+     */
+    @java.io.Serial
+    private static final long serialVersionUID = 1L;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

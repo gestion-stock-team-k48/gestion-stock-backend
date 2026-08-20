@@ -8,7 +8,7 @@ import cm.kfokam.stock.dashboard.dto.DashboardStatsResponse;
 import cm.kfokam.stock.dashboard.dto.TopArticleVenduResponse;
 import cm.kfokam.stock.vente.VenteService;
 import cm.kfokam.stock.vente.dto.VenteResponse;
-import cm.kfokam.stock.vente.dto.ligneVente.LigneVenteResponse;
+import cm.kfokam.stock.vente.dto.lignevente.LigneVenteResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

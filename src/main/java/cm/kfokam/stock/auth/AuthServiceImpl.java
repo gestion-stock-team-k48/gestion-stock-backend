@@ -1,5 +1,6 @@
 package cm.kfokam.stock.auth;
 
+import cm.kfokam.stock.utilisateur.dto.AdminInitialRequest;
 import cm.kfokam.stock.auth.dto.AuthenticationRequest;
 import cm.kfokam.stock.auth.dto.AuthenticationResponse;
 import cm.kfokam.stock.auth.dto.RegisterRequest;
@@ -94,9 +95,10 @@ class AuthServiceImpl implements AuthService {
                 request.email(), request.numTel(), request.siteWeb());
         EntrepriseResponse entreprise = entrepriseService.create(entrepriseRequest);
 
-        utilisateurService.createInitialAdmin(entreprise.id(), request.nomAdmin(), request.prenomAdmin(),
-                request.emailAdmin(), request.motDePasse(), request.dateDeNaissance(),
-                request.rueAdmin(), request.villeAdmin(), request.codePostalAdmin(), request.paysAdmin());
+        utilisateurService.createInitialAdmin(new AdminInitialRequest(
+                entreprise.id(), request.nomAdmin(), request.prenomAdmin(), request.emailAdmin(),
+                request.motDePasse(), request.dateDeNaissance(),
+                request.rueAdmin(), request.villeAdmin(), request.codePostalAdmin(), request.paysAdmin()));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.emailAdmin());
         String jwtToken = jwtService.generateToken(userDetails);

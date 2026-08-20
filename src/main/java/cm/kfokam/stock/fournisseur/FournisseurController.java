@@ -6,7 +6,6 @@ import cm.kfokam.stock.fournisseur.dto.FournisseurResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,13 +35,11 @@ public class FournisseurController {
     private final FournisseurService fournisseurService;
 
     @Operation(summary = "Créer un fournisseur", description = "Ajoute un nouveau fournisseur pour l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Fournisseur créé"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
-    })
+    @ApiResponse(responseCode = "201", description = "Fournisseur créé")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<FournisseurResponse> create(@Valid @RequestBody FournisseurRequest request) {
@@ -51,12 +48,10 @@ public class FournisseurController {
     }
 
     @Operation(summary = "Récupérer un fournisseur", description = "Retourne un fournisseur par son identifiant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Fournisseur trouvé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Fournisseur trouvé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<FournisseurResponse> getById(
@@ -65,11 +60,9 @@ public class FournisseurController {
     }
 
     @Operation(summary = "Lister les fournisseurs", description = "Retourne tous les fournisseurs de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des fournisseurs"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé")
-    })
+    @ApiResponse(responseCode = "200", description = "Liste des fournisseurs")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<PageResponse<FournisseurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -77,14 +70,12 @@ public class FournisseurController {
     }
 
     @Operation(summary = "Modifier un fournisseur", description = "Met à jour les informations d'un fournisseur existant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Fournisseur mis à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Fournisseur introuvable"),
-            @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
-    })
+    @ApiResponse(responseCode = "200", description = "Fournisseur mis à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
+    @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<FournisseurResponse> update(
@@ -94,14 +85,12 @@ public class FournisseurController {
     }
 
     @Operation(summary = "Uploader la photo d'un fournisseur", description = "Enregistre la photo d'un fournisseur dans le bucket MinIO")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Photo mise à jour"),
-            @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Fournisseur introuvable"),
-            @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
-    })
+    @ApiResponse(responseCode = "200", description = "Photo mise à jour")
+    @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
+    @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FournisseurResponse> uploadPhoto(
@@ -111,12 +100,10 @@ public class FournisseurController {
     }
 
     @Operation(summary = "Supprimer un fournisseur", description = "Supprime définitivement un fournisseur")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Fournisseur supprimé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
-    })
+    @ApiResponse(responseCode = "204", description = "Fournisseur supprimé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

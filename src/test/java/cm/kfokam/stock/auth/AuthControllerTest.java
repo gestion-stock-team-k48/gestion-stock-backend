@@ -13,12 +13,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,7 +38,7 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private AuthService authService;
 
     @Test
@@ -187,7 +188,7 @@ class AuthControllerTest {
     void resetPassword_shouldReturn401_whenTokenInvalidOrExpired() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest("bad-token", "NewP@ss1!");
 
-        org.mockito.Mockito.doThrow(new InvalidTokenException("Le code de réinitialisation est invalide ou a expiré"))
+        doThrow(new InvalidTokenException("Le code de réinitialisation est invalide ou a expiré"))
                 .when(authService).resetPassword("bad-token", "NewP@ss1!");
 
         mockMvc.perform(post("/auth/reset-password")

@@ -1,4 +1,4 @@
-package cm.kfokam.stock.vente.dto.ligneVente;
+package cm.kfokam.stock.vente.dto.lignevente;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

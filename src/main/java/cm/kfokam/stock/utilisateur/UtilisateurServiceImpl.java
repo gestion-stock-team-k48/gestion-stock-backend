@@ -7,6 +7,7 @@ import cm.kfokam.stock.entreprise.model.Entreprise;
 import cm.kfokam.stock.exception.DuplicateEmailException;
 import cm.kfokam.stock.exception.EntityNotFoundException;
 import cm.kfokam.stock.storage.FileStorageService;
+import cm.kfokam.stock.utilisateur.dto.AdminInitialRequest;
 import cm.kfokam.stock.utilisateur.dto.ChangePasswordRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurMeRequest;
 import cm.kfokam.stock.utilisateur.dto.UtilisateurRequest;
@@ -39,6 +40,7 @@ import java.util.UUID;
 class UtilisateurServiceImpl implements UtilisateurService {
 
     private static final int TEMPORARY_PASSWORD_LENGTH = 10;
+    private static final String EMAIL_DEJA_UTILISE = "L'email '%s' est déjà utilisé";
     private static final String PHOTO_FOLDER = "utilisateurs";
 
     private final UtilisateurRepository utilisateurRepository;
@@ -58,7 +60,7 @@ class UtilisateurServiceImpl implements UtilisateurService {
     @Override
     public UtilisateurResponse create(UtilisateurRequest request) {
         if (utilisateurRepository.existsByEmail(request.email())) {
-            throw new DuplicateEmailException("L'email '%s' est déjà utilisé".formatted(request.email()));
+            throw new DuplicateEmailException(EMAIL_DEJA_UTILISE.formatted(request.email()));
         }
         Long idEntreprise = currentUserService.getCurrentEntrepriseId();
 
@@ -78,21 +80,20 @@ class UtilisateurServiceImpl implements UtilisateurService {
     }
 
     @Override
-    public UtilisateurResponse createInitialAdmin(Long entrepriseId, String nom, String prenom, String email,
-                                                    String rawPassword, LocalDate dateDeNaissance,
-                                                    String rue, String ville, String codePostal, String pays) {
-        if (utilisateurRepository.existsByEmail(email)) {
-            throw new DuplicateEmailException("L'email '%s' est déjà utilisé".formatted(email));
+    public UtilisateurResponse createInitialAdmin(AdminInitialRequest request) {
+        if (utilisateurRepository.existsByEmail(request.email())) {
+            throw new DuplicateEmailException(EMAIL_DEJA_UTILISE.formatted(request.email()));
         }
 
         Utilisateur utilisateur = Utilisateur.builder()
-                .nom(nom)
-                .prenom(prenom)
-                .email(email)
-                .motDePasse(passwordEncoder.encode(rawPassword))
-                .dateDeNaissance(dateDeNaissance)
-                .adresse(Adresse.builder().adresse1(rue).ville(ville).codePostal(codePostal).pays(pays).build())
-                .entreprise(entityManager.getReference(Entreprise.class, entrepriseId))
+                .nom(request.nom())
+                .prenom(request.prenom())
+                .email(request.email())
+                .motDePasse(passwordEncoder.encode(request.rawPassword()))
+                .dateDeNaissance(request.dateDeNaissance())
+                .adresse(Adresse.builder().adresse1(request.rue()).ville(request.ville())
+                        .codePostal(request.codePostal()).pays(request.pays()).build())
+                .entreprise(entityManager.getReference(Entreprise.class, request.entrepriseId()))
                 .roles(Set.of(Role.ROLE_ADMIN))
                 .mustChangePassword(false)
                 .build();
@@ -120,7 +121,7 @@ class UtilisateurServiceImpl implements UtilisateurService {
         utilisateurRepository.findByEmail(request.email())
                 .filter(existing -> !existing.getId().equals(id))
                 .ifPresent(existing -> {
-                    throw new DuplicateEmailException("L'email '%s' est déjà utilisé".formatted(request.email()));
+                    throw new DuplicateEmailException(EMAIL_DEJA_UTILISE.formatted(request.email()));
                 });
 
         // entreprise is fixed at creation and never reassigned via update — a user belongs to exactly one tenant.

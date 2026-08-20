@@ -7,7 +7,6 @@ import cm.kfokam.stock.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,14 +36,12 @@ public class CommandeFournisseurController {
     private final CommandeFournisseurService commandeFournisseurService;
 
     @Operation(summary = "Créer une commande fournisseur", description = "Enregistre une nouvelle commande auprès d'un fournisseur")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Commande créée"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Fournisseur ou article introuvable"),
-            @ApiResponse(responseCode = "409", description = "Code de commande déjà utilisé")
-    })
+    @ApiResponse(responseCode = "201", description = "Commande créée")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Fournisseur ou article introuvable")
+    @ApiResponse(responseCode = "409", description = "Code de commande déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CommandeFournisseurResponse> create(@Valid @RequestBody CommandeFournisseurRequest request) {
@@ -53,12 +50,10 @@ public class CommandeFournisseurController {
     }
 
     @Operation(summary = "Récupérer une commande fournisseur", description = "Retourne une commande fournisseur par son identifiant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Commande trouvée"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Commande introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Commande trouvée")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Commande introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CommandeFournisseurResponse> getById(
@@ -67,11 +62,9 @@ public class CommandeFournisseurController {
     }
 
     @Operation(summary = "Lister les commandes fournisseur", description = "Retourne toutes les commandes fournisseur de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des commandes"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé")
-    })
+    @ApiResponse(responseCode = "200", description = "Liste des commandes")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<PageResponse<CommandeFournisseurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -79,12 +72,10 @@ public class CommandeFournisseurController {
     }
 
     @Operation(summary = "Historique des commandes d'un fournisseur", description = "Retourne toutes les commandes passées auprès d'un fournisseur donné")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Historique des commandes"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Historique des commandes")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Fournisseur introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/fournisseur/{idFournisseur}")
     public ResponseEntity<List<CommandeFournisseurResponse>> getHistoriqueByFournisseur(
@@ -93,14 +84,12 @@ public class CommandeFournisseurController {
     }
 
     @Operation(summary = "Modifier une commande fournisseur", description = "Met à jour les informations d'une commande existante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Commande mise à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Commande, fournisseur ou article introuvable"),
-            @ApiResponse(responseCode = "409", description = "Code de commande déjà utilisé")
-    })
+    @ApiResponse(responseCode = "200", description = "Commande mise à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Commande, fournisseur ou article introuvable")
+    @ApiResponse(responseCode = "409", description = "Code de commande déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CommandeFournisseurResponse> update(
@@ -110,13 +99,11 @@ public class CommandeFournisseurController {
     }
 
     @Operation(summary = "Supprimer une commande fournisseur", description = "Supprime définitivement une commande fournisseur")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Commande supprimée"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Commande introuvable"),
-            @ApiResponse(responseCode = "409", description = "Suppression interdite : la commande est à l'état LIVREE")
-    })
+    @ApiResponse(responseCode = "204", description = "Commande supprimée")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Commande introuvable")
+    @ApiResponse(responseCode = "409", description = "Suppression interdite : la commande est à l'état LIVREE")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
@@ -126,14 +113,12 @@ public class CommandeFournisseurController {
     }
 
     @Operation(summary = "Changer l'état d'une commande fournisseur", description = "Fait transitionner une commande vers un nouvel état (ex: VALIDEE, LIVREE, ANNULEE)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "État de la commande mis à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Commande introuvable"),
-            @ApiResponse(responseCode = "409", description = "Transition d'état invalide")
-    })
+    @ApiResponse(responseCode = "200", description = "État de la commande mis à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Commande introuvable")
+    @ApiResponse(responseCode = "409", description = "Transition d'état invalide")
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/etat")
     public ResponseEntity<CommandeFournisseurResponse> updateEtat(

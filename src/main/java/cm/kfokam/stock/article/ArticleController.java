@@ -6,7 +6,6 @@ import cm.kfokam.stock.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,14 +35,12 @@ public class ArticleController {
     private final ArticleService articleService;
 
     @Operation(summary = "Créer un article", description = "Ajoute un nouvel article au catalogue de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Article créé"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Catégorie introuvable"),
-            @ApiResponse(responseCode = "409", description = "Code article déjà utilisé")
-    })
+    @ApiResponse(responseCode = "201", description = "Article créé")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Catégorie introuvable")
+    @ApiResponse(responseCode = "409", description = "Code article déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ArticleResponse> create(@Valid @RequestBody ArticleRequest request) {
@@ -52,12 +49,10 @@ public class ArticleController {
     }
 
     @Operation(summary = "Récupérer un article", description = "Retourne un article par son identifiant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Article trouvé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Article introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Article trouvé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Article introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ArticleResponse> getById(
@@ -66,11 +61,9 @@ public class ArticleController {
     }
 
     @Operation(summary = "Lister les articles", description = "Retourne tous les articles de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des articles"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé")
-    })
+    @ApiResponse(responseCode = "200", description = "Liste des articles")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<PageResponse<ArticleResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -78,14 +71,12 @@ public class ArticleController {
     }
 
     @Operation(summary = "Modifier un article", description = "Met à jour les informations d'un article existant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Article mis à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Article ou catégorie introuvable"),
-            @ApiResponse(responseCode = "409", description = "Code article déjà utilisé")
-    })
+    @ApiResponse(responseCode = "200", description = "Article mis à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Article ou catégorie introuvable")
+    @ApiResponse(responseCode = "409", description = "Code article déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ArticleResponse> update(
@@ -95,14 +86,12 @@ public class ArticleController {
     }
 
     @Operation(summary = "Uploader la photo d'un article", description = "Enregistre la photo d'un article dans le bucket MinIO")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Photo mise à jour"),
-            @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Article introuvable"),
-            @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
-    })
+    @ApiResponse(responseCode = "200", description = "Photo mise à jour")
+    @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Article introuvable")
+    @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ArticleResponse> uploadPhoto(
@@ -112,13 +101,11 @@ public class ArticleController {
     }
 
     @Operation(summary = "Supprimer un article", description = "Supprime définitivement un article du catalogue")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Article supprimé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Article introuvable"),
-            @ApiResponse(responseCode = "409", description = "L'article est encore associé à des commandes ou des mouvements de stock")
-    })
+    @ApiResponse(responseCode = "204", description = "Article supprimé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Article introuvable")
+    @ApiResponse(responseCode = "409", description = "L'article est encore associé à des commandes ou des mouvements de stock")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

@@ -1,5 +1,6 @@
 package cm.kfokam.stock.utilisateur;
 
+import cm.kfokam.stock.utilisateur.dto.AdminInitialRequest;
 import cm.kfokam.stock.auth.CurrentUserService;
 import cm.kfokam.stock.email.EmailService;
 import cm.kfokam.stock.entreprise.model.Entreprise;
@@ -156,7 +157,7 @@ class UtilisateurServiceImplTest {
 
         assertThat(utilisateur.getMotDePasse()).isEqualTo("encoded-temp-pwd");
         assertThat(utilisateur.isMustChangePassword()).isTrue();
-        verify(passwordEncoder).encode(argThat(rawPassword -> rawPassword != null && rawPassword.length() > 0));
+        verify(passwordEncoder).encode(argThat(rawPassword -> rawPassword != null && !rawPassword.isEmpty()));
     }
 
     @Test
@@ -178,8 +179,8 @@ class UtilisateurServiceImplTest {
         when(utilisateurRepository.save(any(Utilisateur.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(utilisateurMapper.toResponse(any(Utilisateur.class))).thenReturn(response);
 
-        utilisateurService.createInitialAdmin(ENTREPRISE_ID, "Tchana", "Francky", "francky@kfokam.cm",
-                "MyOwnP@ss1", LocalDate.of(1995, 3, 10), "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun");
+        utilisateurService.createInitialAdmin(new AdminInitialRequest(
+                ENTREPRISE_ID, "Tchana", "Francky", "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10), "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun"));
 
         verify(utilisateurRepository).save(argThat(saved ->
                 saved.getMotDePasse().equals("encoded-own-pwd")
@@ -203,9 +204,8 @@ class UtilisateurServiceImplTest {
         when(utilisateurRepository.save(any(Utilisateur.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(utilisateurMapper.toResponse(any(Utilisateur.class))).thenReturn(responseWithAdresse);
 
-        UtilisateurResponse result = utilisateurService.createInitialAdmin(ENTREPRISE_ID, "Tchana", "Francky",
-                "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10),
-                "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun");
+        UtilisateurResponse result = utilisateurService.createInitialAdmin(new AdminInitialRequest(
+                ENTREPRISE_ID, "Tchana", "Francky", "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10), "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun"));
 
         verify(utilisateurRepository).save(argThat(saved ->
                 saved.getAdresse() != null
@@ -224,9 +224,8 @@ class UtilisateurServiceImplTest {
     void createInitialAdmin_shouldThrowDuplicateEmailException_whenEmailAlreadyUsed() {
         when(utilisateurRepository.existsByEmail("francky@kfokam.cm")).thenReturn(true);
 
-        assertThatThrownBy(() -> utilisateurService.createInitialAdmin(ENTREPRISE_ID, "Tchana", "Francky",
-                "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10),
-                "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun"))
+        assertThatThrownBy(() -> utilisateurService.createInitialAdmin(new AdminInitialRequest(
+                ENTREPRISE_ID, "Tchana", "Francky", "francky@kfokam.cm", "MyOwnP@ss1", LocalDate.of(1995, 3, 10), "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun")))
                 .isInstanceOf(DuplicateEmailException.class);
 
         verify(utilisateurRepository, never()).save(any());

@@ -2,7 +2,7 @@ package cm.kfokam.stock.vente;
 
 import cm.kfokam.stock.vente.dto.VenteRequest;
 import cm.kfokam.stock.vente.dto.VenteResponse;
-import cm.kfokam.stock.vente.dto.ligneVente.LigneVenteResponse;
+import cm.kfokam.stock.vente.dto.lignevente.LigneVenteResponse;
 import cm.kfokam.stock.vente.model.LigneVente;
 import cm.kfokam.stock.vente.model.Vente;
 import org.mapstruct.Mapper;

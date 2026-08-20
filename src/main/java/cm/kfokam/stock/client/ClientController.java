@@ -6,7 +6,6 @@ import cm.kfokam.stock.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,13 +35,11 @@ public class ClientController {
     private final ClientService clientService;
 
     @Operation(summary = "Créer un client", description = "Ajoute un nouveau client pour l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Client créé"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
-    })
+    @ApiResponse(responseCode = "201", description = "Client créé")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ClientResponse> create(@Valid @RequestBody ClientRequest request) {
@@ -51,12 +48,10 @@ public class ClientController {
     }
 
     @Operation(summary = "Récupérer un client", description = "Retourne un client par son identifiant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Client trouvé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé"),
-            @ApiResponse(responseCode = "404", description = "Client introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Client trouvé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
+    @ApiResponse(responseCode = "404", description = "Client introuvable")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponse> getById(
@@ -65,11 +60,9 @@ public class ClientController {
     }
 
     @Operation(summary = "Lister les clients", description = "Retourne tous les clients de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des clients"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé")
-    })
+    @ApiResponse(responseCode = "200", description = "Liste des clients")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<PageResponse<ClientResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -77,14 +70,12 @@ public class ClientController {
     }
 
     @Operation(summary = "Modifier un client", description = "Met à jour les informations d'un client existant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Client mis à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Client introuvable"),
-            @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
-    })
+    @ApiResponse(responseCode = "200", description = "Client mis à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Client introuvable")
+    @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ClientResponse> update(
@@ -94,14 +85,12 @@ public class ClientController {
     }
 
     @Operation(summary = "Uploader la photo d'un client", description = "Enregistre la photo de profil d'un client sur le stockage de fichiers et remplace l'ancienne le cas échéant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Photo mise à jour"),
-            @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Client introuvable"),
-            @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
-    })
+    @ApiResponse(responseCode = "200", description = "Photo mise à jour")
+    @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Client introuvable")
+    @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClientResponse> uploadPhoto(
@@ -111,12 +100,10 @@ public class ClientController {
     }
 
     @Operation(summary = "Supprimer un client", description = "Supprime définitivement un client")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Client supprimé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Client introuvable")
-    })
+    @ApiResponse(responseCode = "204", description = "Client supprimé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Client introuvable")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

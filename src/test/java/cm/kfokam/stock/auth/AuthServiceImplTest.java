@@ -1,5 +1,6 @@
 package cm.kfokam.stock.auth;
 
+import cm.kfokam.stock.utilisateur.dto.AdminInitialRequest;
 import cm.kfokam.stock.auth.dto.AuthenticationRequest;
 import cm.kfokam.stock.auth.dto.AuthenticationResponse;
 import cm.kfokam.stock.auth.dto.RegisterRequest;
@@ -113,9 +114,8 @@ class AuthServiceImplTest {
         AuthenticationResponse result = authService.register(registerRequest);
 
         assertThat(result).isEqualTo(new AuthenticationResponse("access-token", "refresh-token"));
-        verify(utilisateurService).createInitialAdmin(1L, "Tchana", "Francky", "francky@kfokam.cm",
-                "P@ssw0rd!", LocalDate.of(1995, 3, 10),
-                "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun");
+        verify(utilisateurService).createInitialAdmin(new AdminInitialRequest(
+                1L, "Tchana", "Francky", "francky@kfokam.cm", "P@ssw0rd!", LocalDate.of(1995, 3, 10), "Rue des Manguiers", "Yaoundé", "BP-123", "Cameroun"));
     }
 
     @Test

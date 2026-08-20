@@ -9,7 +9,6 @@ import cm.kfokam.stock.utilisateur.model.Utilisateur;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,10 +40,8 @@ public class UtilisateurController {
     private final UtilisateurService utilisateurService;
 
     @Operation(summary = "Récupérer mon profil", description = "Retourne les informations de l'utilisateur authentifié")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Profil trouvé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié")
-    })
+    @ApiResponse(responseCode = "200", description = "Profil trouvé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/me")
     public ResponseEntity<UtilisateurResponse> getMine(@AuthenticationPrincipal Utilisateur utilisateur) {
@@ -52,11 +49,9 @@ public class UtilisateurController {
     }
 
     @Operation(summary = "Modifier mon profil", description = "Met à jour les informations personnelles de l'utilisateur authentifié (nom, prénom, adresse, date de naissance)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Profil mis à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié")
-    })
+    @ApiResponse(responseCode = "200", description = "Profil mis à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PutMapping("/me")
     public ResponseEntity<UtilisateurResponse> updateMine(@AuthenticationPrincipal Utilisateur utilisateur,
@@ -65,13 +60,11 @@ public class UtilisateurController {
     }
 
     @Operation(summary = "Créer un utilisateur", description = "Ajoute un nouvel utilisateur pour l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Utilisateur créé"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
-    })
+    @ApiResponse(responseCode = "201", description = "Utilisateur créé")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
     @PostMapping
     public ResponseEntity<UtilisateurResponse> create(@Valid @RequestBody UtilisateurRequest request) {
         UtilisateurResponse response = utilisateurService.create(request);
@@ -79,12 +72,10 @@ public class UtilisateurController {
     }
 
     @Operation(summary = "Récupérer un utilisateur", description = "Retourne un utilisateur par son identifiant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Utilisateur trouvé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable")
-    })
+    @ApiResponse(responseCode = "200", description = "Utilisateur trouvé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Utilisateur introuvable")
     @GetMapping("/{id}")
     public ResponseEntity<UtilisateurResponse> getById(
             @Parameter(description = "Identifiant de l'utilisateur", example = "1") @PathVariable Long id) {
@@ -92,25 +83,21 @@ public class UtilisateurController {
     }
 
     @Operation(summary = "Lister les utilisateurs", description = "Retourne tous les utilisateurs de l'entreprise courante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
-    })
+    @ApiResponse(responseCode = "200", description = "Liste des utilisateurs")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
     @GetMapping
     public ResponseEntity<PageResponse<UtilisateurResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(PageResponse.from(utilisateurService.getAll(pageable)));
     }
 
     @Operation(summary = "Modifier un utilisateur", description = "Met à jour les informations d'un utilisateur existant")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable"),
-            @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
-    })
+    @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Utilisateur introuvable")
+    @ApiResponse(responseCode = "409", description = "Email déjà utilisé")
     @PutMapping("/{id}")
     public ResponseEntity<UtilisateurResponse> update(
             @Parameter(description = "Identifiant de l'utilisateur", example = "1") @PathVariable Long id,
@@ -119,14 +106,12 @@ public class UtilisateurController {
     }
 
     @Operation(summary = "Uploader la photo d'un utilisateur", description = "Enregistre la photo de l'utilisateur authentifié dans le bucket MinIO (uniquement sa propre photo)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Photo mise à jour"),
-            @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - un utilisateur ne peut modifier que sa propre photo"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable"),
-            @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
-    })
+    @ApiResponse(responseCode = "200", description = "Photo mise à jour")
+    @ApiResponse(responseCode = "400", description = "Fichier invalide ou manquant")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - un utilisateur ne peut modifier que sa propre photo")
+    @ApiResponse(responseCode = "404", description = "Utilisateur introuvable")
+    @ApiResponse(responseCode = "500", description = "Échec du stockage du fichier")
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UtilisateurResponse> uploadPhoto(
@@ -136,12 +121,10 @@ public class UtilisateurController {
     }
 
     @Operation(summary = "Supprimer un utilisateur", description = "Supprime définitivement un utilisateur")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Utilisateur supprimé"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur introuvable")
-    })
+    @ApiResponse(responseCode = "204", description = "Utilisateur supprimé")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - rôle ADMIN requis")
+    @ApiResponse(responseCode = "404", description = "Utilisateur introuvable")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Identifiant de l'utilisateur", example = "1") @PathVariable Long id) {
@@ -150,11 +133,9 @@ public class UtilisateurController {
     }
 
     @Operation(summary = "Changer son mot de passe", description = "Permet à l'utilisateur authentifié de changer son propre mot de passe")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Mot de passe changé"),
-            @ApiResponse(responseCode = "400", description = "Requête invalide"),
-            @ApiResponse(responseCode = "401", description = "Non authentifié ou ancien mot de passe incorrect")
-    })
+    @ApiResponse(responseCode = "204", description = "Mot de passe changé")
+    @ApiResponse(responseCode = "400", description = "Requête invalide")
+    @ApiResponse(responseCode = "401", description = "Non authentifié ou ancien mot de passe incorrect")
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/change-password")
     public ResponseEntity<Void> changePassword(@AuthenticationPrincipal Utilisateur utilisateur,
