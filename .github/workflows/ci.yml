@@ -4,6 +4,14 @@
 # premiers — `needs` l'impose, et la publication ne se déclenche que sur les références qui
 # désignent quelque chose de déployable.
 
+# Les actions sont épinglées par empreinte de commit, avec leur version en commentaire.
+# Un tag peut être redéplacé sur un autre commit sans que personne ne le voie : quiconque
+# obtient les droits sur le dépôt d'une action peut alors changer ce qui s'exécute dans nos
+# pipelines, avec accès aux secrets. Une empreinte, elle, ne bouge pas.
+#
+# Pour monter une version : lire l'empreinte du nouveau tag et remplacer les deux.
+#     gh api repos/<propriétaire>/<dépôt>/git/ref/tags/<tag> --jq .object.sha
+
 name: CI
 
 on:
@@ -51,13 +59,13 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           # SonarCloud a besoin de l'historique complet pour attribuer les lignes neuves à
           # leur commit ; une copie superficielle lui ferait voir tout le dépôt comme neuf.
           fetch-depth: 0
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '21'
@@ -96,7 +104,7 @@ jobs:
 
       - name: Rapports de test
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: rapports
           path: |
@@ -132,17 +140,17 @@ jobs:
     timeout-minutes: 15
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: rapports
           path: target
@@ -164,12 +172,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # Trivy en mode système de fichiers lit le `pom.xml` et compare aux avis publiés : pas
       # de compilation, pas de base de vulnérabilités à entretenir soi-même.
       - name: Trivy sur les dépendances
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -188,14 +196,14 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Étiquettes
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ env.IMAGE }}
           tags: |
@@ -211,7 +219,7 @@ jobs:
 
       - name: Connexion à Docker Hub
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           username: ${{ vars.DOCKERHUB_NAMESPACE || 'mcjordan12' }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -220,7 +228,7 @@ jobs:
       # localement : c'est celle que Trivy inspecte. Le build multi-architecture ne part
       # qu'ensuite, une fois le scan passé.
       - name: Construction pour analyse
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           load: true
@@ -230,7 +238,7 @@ jobs:
           provenance: false
 
       - name: Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: analyse:local
           format: sarif
@@ -240,13 +248,13 @@ jobs:
 
       - name: Remontée dans l'onglet sécurité
         if: always() && github.event_name != 'pull_request'
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@f3712979fa5f215279b101dd0a2e3bdfb4353324 # v3
         with:
           sarif_file: trivy.sarif
           category: trivy-image
 
       - name: Échec sur vulnérabilité corrigeable
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: analyse:local
           format: table
@@ -256,7 +264,7 @@ jobs:
 
       - name: Construction multi-architecture et publication
         if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
